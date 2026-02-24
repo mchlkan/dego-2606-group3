@@ -1,8 +1,16 @@
-# Do not track raw datasets in version control (raw data may contain sensitive PII)
-# prevents accidental exposure, and preserves the raw dataset as an immutable source of truth.
-# Only the .gitkeep file is tracked to maintain folder structure.
+# Data Governance: never commit raw/processed data (may contain PII)
 data/raw/*
 !data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Jupyter / Python
+.ipynb_checkpoints/
+*.pyc
+
+# OS / Editor 
+.DS_Store
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
