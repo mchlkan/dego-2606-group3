@@ -4,14 +4,14 @@ This document outlines the task breakdown, ownership, timeline, and deliverable 
 
 ---
 
-## Timeline Overview
+## Timeline Overview (as of 01/03/2026)
 
 | Phase | Target | Status |
 |-------|--------|--------|
 | Setup — Repo, environment, structure, docs | Complete | Done |
-| Data Loading — Canonical loader and flattening | This week | Not started |
-| Analysis — Data quality, bias, privacy notebooks | This week | Not started |
-| README — Fill in all analysis sections | This week | Not started |
+| Data Loading — Canonical loader and flattening | This week | Done |
+| Analysis — Data quality, bias, privacy notebooks | This week | Ongoing (70%) |
+| README — Fill in all analysis sections | This week | Ongoing (60%) |
 | Presentation — Record 6-min video | Before deadline | Not started |
 | Final Review — Code runs, README polished, repo clean | Before deadline | Not started |
 
@@ -76,16 +76,16 @@ This document outlines the task breakdown, ownership, timeline, and deliverable 
 
 ---
 
-## Deliverable Checklist (from project description)
+## Deliverable Checklist (from project description; as of 01/03/2026)
 
 ### GitHub Repository
 
-- [ ] Repository is public
-- [ ] Repository has a description set on GitHub
-- [ ] Minimum 10 meaningful commits across the project
-- [ ] All team members have commits under their own accounts
-- [ ] Commit messages are clear and descriptive
-- [ ] Commit history shows steady progress (not a single bulk upload)
+- [x] Repository is public
+- [x] Repository has a description set on GitHub
+- [x] Minimum 10 meaningful commits across the project
+- [x] All team members have commits under their own accounts
+- [x] Commit messages are clear and descriptive
+- [x] Commit history shows steady progress (not a single bulk upload)
 - [ ] All code runs without errors
 
 ### Notebooks
