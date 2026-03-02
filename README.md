@@ -165,19 +165,98 @@ tbd
 ## 8. Privacy and Governance Assessment
 
 ### 8.1 Identification of Personal Data (PII)  
-_TBD_
 
+There are various kinds of personal data contained in the dataset, which fall under the category of personal data as defined under the General Data Protection Regulation (GDPR). Personal data is defined under the GDPR as information relating to an identified or identifiable natural person.
+
+#### Direct Identifiers (High Risk)
+
+The following fields directly identify an individual:
+
+- `full_name`
+- `email`
+- `ssn`
+
+These characteristics uniquely identify an individual without the need for any additional information. For instance, the Social Security Number (SSN) is considered highly sensitive personal data due to the possibility of misuse for identity theft or financial fraud. These fields require strong security measures and should not be used in analytics environments without pseudonymization.
+
+#### Personal Data and Quasi-Identifiers (Moderate to High Risk)
+
+The dataset also includes attributes that may not directly identify a person alone but can enable re-identification when combined with other data:
+
+- `date_of_birth`
+- `ip_address`
+- `zip_code`
+- `employment_status`
+- `annual_income`
+- `credit_score`
+- `loan_amount`
+
+When multiple quasi-identifiers are combined (e.g., zip code + date of birth + employment status), the risk of re-identification increases substantially. This poses privacy risks even after direct identifiers are removed.
+   
 ### 8.2 GDPR Compliance Assessment  
-tbd
+
+Based on the dataset and its current structure, several governance and compliance gaps are observable when assessed against key GDPR principles.
+
+#### 1. Lack of Explicit Consent Tracking
+
+There is no field indicating whether the applicant has provided consent for data processing. GDPR requires a lawful basis for processing personal data, and where consent is used, it must be explicit and properly documented. The absence of a consent flag or timestamp creates uncertainty regarding the lawfulness of processing.
+
+#### 2. Absence of a Data Retention Policy
+
+The dataset does not include metadata such as collection timestamps or defined retention periods. According to the GDPR storage limitation principle, personal data must be retained only for as long as necessary for the specified purpose. Without retention rules, there is a risk of excessive data storage.
+
+#### 3. Storage of Sensitive Identifiers in Raw Format
+
+Highly sensitive identifiers such as `ssn` and `email` are stored in raw, non-pseudonymized form. This increases exposure risk in the event of unauthorized access or data breaches. GDPR encourages pseudonymization and data minimization to reduce such risks.
+
+#### 4. Missing Audit Trail for Automated Decisions
+
+There are no fields capturing information such as:
+
+- decision timestamp  
+- model version  
+- reviewer identity  
+
+Without these elements, it becomes difficult to demonstrate accountability, ensure transparency, or explain credit decisions to affected individuals.
+
+#### 5. Lack of Documented Human Oversight
+
+Automated credit scoring may significantly affect individuals’ financial opportunities. Under GDPR, individuals have the right not to be subject solely to automated decision-making without safeguards. The dataset does not indicate the existence of a human review process or override mechanism.
+
+---
+
+Overall, while the dataset may support analytical modeling, it lacks several structural governance elements required for full GDPR compliance, particularly in relation to accountability, transparency, and data protection safeguards.
 
 ### 8.3 EU AI Act Risk Classification  
-tbd
+According to the EU’s AI Act, the credit scoring systems fall under the list of high-risk AI systems, as they may have significant effects on individuals’ access to financial services.
+High-risk systems need to have the following elements implemented:
+   - A documented risk management process
+   - Data governance and quality management
+   - Technical documentation
+   - Logging and traceability
+   - Human oversight procedures
+   - Bias monitoring and fairness evaluation
+The existing structure of the data set does not show the implementation of the above elements. For instance, the logging of decisions is not present, as is the documentation of oversight procedures.
 
 ### 8.4 Data Protection Risks  
-tbd
+Some of the primary identified risks from this dataset include:
+   - Identity Theft Risk due to Raw SSN Storage
+   - Re-identification Risk due to Quasi-Identifiers
+   - Lack of Explainability of Automated Decisions
+   - Discrimination Risk if Fairness is not Monitored
+   - Over-collection of Personal Data beyond Necessity
+These risks could lead to legal, reputational, and trust-related consequences if not properly addressed.
 
 ### 8.5 Recommended Governance Controls  
-tbd
+To minimize the risk of non-compliance and operation, the following control mechanisms can be adopted:
+   1. Pseudonymization of SSN and email data before use in analytics
+   2. Removal of full_name data from the model datasets
+   3. Development of a data retention policy
+   4. Implementation of role-based access control for sensitive data
+   5. Logging of credit decisions with timestamp and model version
+   6. Human review process for borderline and rejected cases
+   7. Monitoring of fairness and bias in the credit model
+   8. Documenting the lawful basis for processing data according to the GDPR
+These control mechanisms would greatly improve the alignment and accountability within the credit decision process.
 
 ---
 
