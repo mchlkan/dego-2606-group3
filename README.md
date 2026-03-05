@@ -202,7 +202,7 @@ To reproduce the analysis:
 
 ## 6. Data Quality Audit
 
-In the data quality assessment, we evaluate the dataset across four dimensions: completeness, consistency, validity, and accuracy. We quantify each issue and classify by severity (Low, Moderate, High, Critical) based on its potential impact on decision integrity, model reliability, and auditability. Full technical details, code, and per-record analysis are available in `notebooks/01-data-quality.ipynb`.
+The data quality assessment evaluates the dataset across four dimensions: completeness, consistency, validity, and accuracy. Each issue is quantified and classified by severity (Low, Moderate, High, Critical) based on its potential impact on decision integrity, model reliability, and auditability. Full technical details, code, and per-record analysis are available in `notebooks/01-data-quality.ipynb`.
 
 ### 6.1 Completeness
 
@@ -210,11 +210,11 @@ Decision-critical financial fields are nearly complete: `debt_to_income`, `credi
 
 The dataset also contains empty strings in several string-type fields that are not detected by standard null checks. After normalization, effective missingness is: `email` — 7 records (1.4%), `date_of_birth` — 5 records (1.0%), `gender` — 3 records (0.6%), and `zip_code` — 2 records (0.4%). Identity fields `ssn` and `ip_address` are each missing for 5 records (1.0%).
 
-Conditional completeness checks on decision outcome fields revealed zero violations: All approved records contain `interest_rate` and `approved_amount`, and all rejected records contain a `rejection_reason`. This indicates well-structured data capture logic in the core credit workflow.
+Conditional completeness checks on decision outcome fields revealed zero violations: all approved records contain `interest_rate` and `approved_amount`, and all rejected records contain a `rejection_reason`. This indicates well-structured data capture logic in the core credit workflow.
 
 Among metadata fields, `processing_timestamp` is present in only 62 of 502 records (12.4%) and `loan_purpose` in only 50 records (10.0%). These structural gaps weaken the audit trail and reduce interpretability of decisions.
 
-Spending behavior data is sparse at the per-category level (84–99% missing per category), but this reflects the data collection design. Each applicant likely reports 1–4 spending categories out of 15 available. All 502 records contain at least some spending data. A co-occurrence analysis identified 5 records with 3 or more missing critical fields simultaneously, suggesting systematic data collection failures for specific applicants.
+Spending behavior data is sparse at the per-category level (84–99% missing per category), but this reflects the data collection design, where each applicant reports 1–4 spending categories out of 15 available. All 502 records contain at least some spending data. A co-occurrence analysis identified 5 records with 3 or more missing critical fields simultaneously, suggesting systematic data collection failures for specific applicants.
 
 | Finding | Evidence | Severity |
 |---------|----------|----------|
@@ -228,17 +228,101 @@ Spending behavior data is sparse at the per-category level (84–99% missing per
 
 **Overall completeness risk: Moderate.** Core decision fields are nearly complete with consistent conditional logic. Primary risks arise from empty strings masking missingness, the schema split in income fields, and structural gaps in metadata.
 
-### 6.2 Consistency  
-tbd
+### 6.2 Consistency
 
-### 6.3 Validity  
-tbd
+Two application IDs are duplicated, affecting 4 records in total. One pair (`app_042`) is flagged as a resubmission; the other (`app_001`) is flagged as a system-generated duplicate entry error, with the second record missing most identity fields. No full row-level duplicates were detected. Primary key violations of this kind undermine traceability, audit reliability, and the integrity of any downstream joins or aggregations.
 
-### 6.4 Accuracy  
-tbd
+The `gender` field uses four distinct encodings for two logical categories: `Male` (195), `Female` (193), `M` (53), and `F` (58), alongside 3 missing values. This inconsistency affects 111 records (22.1%) and would distort any grouping or aggregation used in bias analysis if left unstandardized.
 
-### 6.5 Summary of Issues and Impact  
-tbd
+The `date_of_birth` field contains three coexisting date formats across 497 non-null records: `YYYY-MM-DD` (340 records, 68.4%), `DD/MM/YYYY` (101 records, 20.3%), and `YYYY/MM/DD` (56 records, 11.3%). While all values are parseable, mixed formats increase the risk of silent parsing errors for ambiguous dates where day and month values are both ≤ 12.
+
+The `annual_income` field contains mixed Python types within a single column: 488 integer values, 8 string values, and 1 float value. All string values are numerically parseable, but heterogeneous storage can cause implicit casting failures, aggregation instability, or silent exclusion from numeric operations.
+
+| Finding | Evidence | Severity |
+|---------|----------|----------|
+| Duplicate application IDs | 2 IDs affecting 4 records (0.8%) | High |
+| Inconsistent gender encoding | 111 records using M/F instead of Male/Female (22.1%) | Moderate |
+| Inconsistent date formats in `date_of_birth` | 3 coexisting formats across 497 records | Moderate |
+| Mixed Python types in `annual_income` | 488 int, 8 str, 1 float | Moderate |
+
+**Overall consistency risk: Moderate.** Primary key duplication is the highest-severity finding. Representation-level inconsistencies in categorical encoding, date formats, and income data types introduce moderate analytical risk that is addressable through deterministic ingestion controls.
+
+### 6.3 Validity
+
+One record reports a `debt_to_income` ratio of 1.85, exceeding the valid domain constraint of [0, 1]. The affected application was approved with an `approved_amount` of 17,000 and an `interest_rate` of 3.2%, indicating that domain validation was not enforced prior to the approval decision.
+
+Two records contain negative `credit_history_months` values (−10 and −3), which are logically impossible. One record contains a negative `savings_balance` of −5,000, which may indicate a data entry error or an undocumented overdraft representation.
+
+One email address is syntactically invalid (missing the `@` symbol). No SSN format violations or invalid ZIP codes were detected after empty string normalization. No negative values were found in `annual_income`, `interest_rate`, or any spending category, and no extreme spending values (> 1,000,000) were observed.
+
+Two of eight assessed fields have mismatched data types: `processing_timestamp` is stored as a string instead of datetime, and `annual_income` is stored as object instead of float. The remaining fields match their expected domain types.
+
+| Finding | Evidence | Severity |
+|---------|----------|----------|
+| DTI outside valid domain [0, 1] | 1 record (0.2%) — approved application | Moderate |
+| Negative `credit_history_months` | 2 records (0.4%) — minimum value of −10 | Moderate |
+| Negative `savings_balance` | 1 record (0.2%) — value of −5,000 | Moderate |
+| Invalid email format | 1 record (0.2%) — missing `@` symbol | Low–Moderate |
+| Data type mismatches | 2 of 8 fields (`processing_timestamp`, `annual_income`) | Moderate |
+
+**Overall validity risk: Moderate.** Violations are limited in frequency, but the DTI domain breach in an approved application and negative values in decision-critical fields indicate systematic gaps in ingestion-level validation.
+
+### 6.4 Accuracy
+
+All applicant ages fall within the plausible range of 18–100 years. No demographic accuracy concerns were identified.
+
+When annualizing monthly spending (×12) for a like-for-like comparison with annual income, 1 record shows annualized spending exceeding reported income. The affected applicant reports an `annual_income` of 0 with positive spending, suggesting either a data entry error or a failure to distinguish between true zero income and missing income.
+
+Three approved loans have null `annual_income` at the point of decision, with approved amounts between 45,000 and 63,000. All three correspond to the records where income was recorded under the undocumented `annual_salary` field (identified in Section 6.1). After reconciliation, these records do contain valid income values (45,000–75,000). The underlying data is not missing, but the approval pipeline processed these applications without the standard income field being populated — indicating a control gap in the decision workflow rather than a data loss.
+
+All interest rates fall within the plausible range of 0–25%. No pricing anomalies were detected.
+
+| Finding | Evidence | Severity |
+|---------|----------|----------|
+| Annualized spending exceeds reported income | 1 record — income = 0, annualized spending ≈ 16,668 | High |
+| Approved loans with missing canonical income field | 3 records — income present in `annual_salary` but not `annual_income` | High |
+| Age outside plausible range | 0 records | Low |
+| Interest rate outside plausible range | 0 records | Low |
+
+**Overall accuracy risk: Moderate–High.** Demographic and pricing variables are stable, but loan approvals without documented income in the canonical field and a spending-income contradiction represent material plausibility breaches in the decision logic.
+
+### 6.5 Summary of Issues and Impact
+
+The assessment identified 16 distinct data quality issues across all four dimensions. The consolidated risk profile is as follows:
+
+| Dimension | Overall Risk | Key Drivers |
+|-----------|-------------|-------------|
+| Completeness | Moderate | Empty string masking, audit trail gaps, schema inconsistency |
+| Consistency | Moderate | Primary key duplication, categorical encoding fragmentation |
+| Validity | Moderate | DTI domain violation, negative values in decision-critical fields |
+| Accuracy | Moderate–High | Loan approvals without canonical income, spending-income contradiction |
+
+**Overall dataset risk: Moderate–High.** The dataset is structurally sound in its core decision fields, but multiple high-severity issues directly affect auditability, underwriting defensibility, and governance compliance. The most critical findings are: (1) three loans approved without documented income in the canonical field, (2) two duplicated application IDs violating primary key integrity, (3) empty strings silently masking missing values, and (4) 87.6% of records lacking a processing timestamp.
+
+### 6.6 Remediation Steps
+
+All identified issues were remediated programmatically in `notebooks/01-data-quality.ipynb` (Section 10). The cleaned dataset is exported to `data/processed/cleaned_credit_applications.parquet` and serves as the input for all downstream analyses (Notebooks 02 and 03).
+
+Remediation actions applied:
+
+| Action | Target | Effect |
+|--------|--------|--------|
+| Reconcile `annual_income` and `annual_salary` into unified field | 5 records | All records now have a canonical income value |
+| Normalize empty strings to NaN | 14 values across 4 fields | True missingness accurately reflected |
+| Standardize gender encoding (M→Male, F→Female) | 111 records | Consistent categorical representation for bias analysis |
+| Parse `date_of_birth` to ISO 8601 datetime | 497 records across 3 formats | Consistent temporal format for age derivation |
+| Cast `annual_income` to numeric | 8 string values + 1 float | Homogeneous numeric type |
+| Deduplicate on application ID (retain most complete record) | 2 duplicates removed | 500 unique records in cleaned dataset |
+| Flag records with 3+ missing critical fields | 5 records | Flagged for manual review, not excluded |
+| Flag approved loans with missing canonical income | 3 records | Flagged as decision logic anomaly |
+| Flag DTI outside valid domain [0, 1] | 1 record | Flagged for manual review |
+| Set negative `credit_history_months` to NaN | 2 records | Logically impossible values removed |
+| Set negative `savings_balance` to NaN | 1 record | Implausible value removed |
+| Set invalid email (missing @) to NaN | 1 record | Malformed value removed |
+| Replace zero income with NaN | 1 record | Distinguishes true zero from missing |
+| Cast `processing_timestamp` to datetime | 62 records | Correct temporal type |
+
+Recommended controls for production implementation are prioritized in four tiers in the notebook (Section 10.2), ranging from P1 (block approvals without income, enforce primary key constraints) through P4 (schema versioning, automated monitoring).
 
 ---
 
