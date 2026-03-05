@@ -30,15 +30,17 @@
    - 7.4 [Proxy Discrimination Analysis](#74-proxy-discrimination-analysis)
    - 7.5 [Interaction Effects](#75-interaction-effects)
    - 7.6 [Fairness Metrics Summary](#76-fairness-metrics-summary)
-8. [Privacy and Governance Assessment](#8-privacy-and-governance-assessment)
-   - 8.1 [Methodology](#methodology)
-   - 8.2 [Executive risk snapshot](#executive-risk-snapshot)
-   - 8.3 [Identification of Personal Data (PII)](#81-identification-of-personal-data-pii)
-   - 8.4 [Pseudonymization Demonstration](#82-pseudonymization-demonstration)
-   - 8.5 [GDPR Compliance Assessment](#83-gdpr-compliance-assessment)
-   - 8.6 [EU AI Act Risk Classification](#84-eu-ai-act-risk-classification)
-   - 8.7 [Data Protection Risks](#85-data-protection-risks)
-   - 8.8 [Recommended Governance Controls](#86-recommended-governance-controls)
+8. [Privacy and Governance (NB03)](#8-privacy-and-governance-nb03)
+   - 8.1 [Methodology](#81-methodology)
+   - 8.2 [PII identification and classification](#82-pii-identification-and-classification)
+   - 8.3 [Pseudonymisation demonstration](#83-pseudonymisation-demonstration)
+   - 8.4 [Re-identification risk](#84-re-identification-risk)
+   - 8.5 [GDPR article mapping](#85-gdpr-article-mapping)
+   - 8.6 [EU AI Act high-risk classification](#86-eu-ai-act-high-risk-classification)
+   - 8.7 [Governance controls and DPIA](#87-governance-controls-and-dpia)
+   - 8.8 [Data remediation output](#88-data-remediation-output)
+   - 8.9 [Consolidated risk summary](#89-consolidated-risk-summary)
+- [9. Recommendations](#9-recommendations)
 9. [Recommendations](#9-recommendations)
    - 9.1 [Data Quality Improvements](#91-data-quality-improvements)
    - 9.2 [Bias Mitigation Measures](#92-bias-mitigation-measures)
@@ -440,49 +442,73 @@ Female applicants aged 26–35 face the most severe disadvantage in the entire a
 
 ## 8. Privacy and Governance (NB03)
 
-This section summarises the privacy and governance analysis implemented in `notebooks/03-privacy-demo.ipynb`. The assessment is constrained to evidence available in the bias-remediated dataset and repository artifacts. Controls that require organisational evidence (lawful basis records, consent logs, retention enforcement, DSAR workflows, access logs) are flagged as not evidenced when they cannot be validated from the repository.
+This section summarises our privacy and governance audit based on `notebooks/03-privacy-demo.ipynb`. The assessment relies on evidence available in the bias-remediated dataset and repository artifacts. Where controller-side documentation is required (lawful basis records, consent logs, retention enforcement, DSAR workflows, access logs), we flag gaps as not evidenced.
 
 ### 8.1 Methodology
 
-The workflow follows the notebook structure. We (1) classify personal data under GDPR Art. 4(1), including direct identifiers and conditional sensitive fields, while explicitly documenting upstream quasi-identifiers removed during bias remediation; (2) quantify exposure using coverage and value distribution checks; (3) map findings to GDPR obligations and assess EU AI Act high-risk status and related obligations; and (4) propose governance controls and produce a privacy-reduced analytical dataset for downstream use.
+We followed a four-step approach:
 
-### 8.2 PII identification and classification 
+1. We classified personal data under GDPR Art. 4(1), covering direct identifiers, upstream quasi-identifiers removed during bias remediation, and conditional sensitive fields that can enable sensitive inference depending on values.
+2. We quantified exposure using coverage checks and value distributions to identify re-identification and inference hotspots.
+3. We mapped the evidence to relevant GDPR obligations and assessed EU AI Act high-risk status and related obligations for creditworthiness assessment systems.
+4. We translated gaps into an urgency-tier action plan and produced a privacy-reduced analytical dataset for downstream use.
 
-NB03 confirms that direct identifiers remain present in the bias-remediated dataset (`full_name`, `email`, `ssn`, `ip_address`), enabling direct re-identification without requiring quasi-identifier combinations. The notebook also documents upstream privacy exposure from the raw dataset, where `date_of_birth`, `zip_code`, and `gender` existed and were removed in `02-bias-analysis.ipynb`.
+### 8.2 PII identification and classification
 
-Conditional sensitive signals are also present. This includes behavioral spending variables (`spending_alcohol`, `spending_gambling`, `spending_adult_entertainment`) and `loan_purpose`, where the value `medical` creates conditional health-related inference exposure.
+Direct identifiers remain present in the bias-remediated dataset, enabling re-identification without requiring quasi-identifier combinations. The key direct identifiers are:
 
-### 8.3 Pseudonymisation demonstration 
+- `full_name`, `email`, `ssn`, `ip_address` (near-complete coverage)
 
-NB03 demonstrates pseudonymisation as a technical safeguard aligned with GDPR Art. 25 and Recital 26. The notebook applies deterministic SHA-256 hashing for SSNs, keyed HMAC-SHA-256 for emails, replaces full names with an opaque reference token (`id`), and generalises IP addresses to reduce precision.
+We also documented upstream privacy exposure from the raw dataset. The following quasi-identifiers existed at collection time and were removed during bias remediation in `02-bias-analysis.ipynb`:
 
-The notebook explicitly distinguishes pseudonymisation from anonymisation. Pseudonymisation reduces disclosure risk while preserving internal linkage. It does not remove the system from GDPR scope.
+- `date_of_birth`, `zip_code`, `gender`
 
-### 8.4 Re-identification risk 
+Conditional sensitive signals remain present:
 
-NB03 evaluates re-identification risk in the bias-remediated dataset. Because direct identifiers remain present, uniqueness and re-identification risk are driven primarily by those identifiers rather than classic quasi-identifier combinations. The notebook also documents methodological limitations of k-anonymity and references stronger protections (l-diversity, t-closeness) as relevant considerations for any external dataset sharing.
+- Behavioral spending fields are sparsely populated but present (`spending_alcohol` 11 records, 2.2%; `spending_gambling` 7 records, 1.4%; `spending_adult_entertainment` 5 records, 1.0%).
+- `loan_purpose` is populated for 50 records (10.0%). The value `medical` appears in 8 records (1.6%), which may reveal health-related information depending on context.
 
-### 8.5 GDPR article mapping 
+### 8.3 Pseudonymisation demonstration
 
-NB03 maps dataset-level evidence to key GDPR obligations, including:
-- Art. 5 principles, with emphasis on data minimisation for conditional sensitive fields and integrity and confidentiality exposure from identifiers.
-- Art. 6 and Art. 13 governance traceability, flagged as not evidenced because lawful basis and notice versioning cannot be verified from repository artifacts.
-- Art. 9 conditional exposure, focused on `loan_purpose = medical` as a health-related inference risk depending on context.
-- Art. 17 operational readiness, where end-to-end deletion capability is not evidenced from repository artifacts.
-- Art. 22 safeguards, where rejection reasons exist but are largely not meaningful, limiting contestation and review in practice.
-- Art. 25 privacy by design and by default, flagged due to lack of dataset-layer separation between identity data and analytical data.
-- Art. 5(1)(e) storage limitation, supported by a proposed retention schedule because retention enforcement is not evidenced.
+We demonstrate pseudonymisation as a technical safeguard aligned with GDPR Art. 25 and Recital 26. The following transformations reduce disclosure risk while preserving internal linkage:
 
-### 8.6 EU AI Act high-risk classification 
+- SHA-256 hashing applied to SSNs
+- keyed HMAC-SHA-256 applied to emails
+- replacement of `full_name` with an opaque reference token (`id`)
+- IP generalisation to reduce precision
 
-NB03 classifies the creditworthiness assessment system as high-risk under the EU AI Act (Annex III, point 5(b)). The notebook evaluates obligations under Art. 9 to Art. 15 using repository evidence and flags gaps where required artifacts are not available, including risk management, technical documentation, record-keeping, transparency, and human oversight.
+Pseudonymisation does not constitute anonymisation. It reduces disclosure risk, but the resulting dataset remains within GDPR scope.
+
+### 8.4 Re-identification risk
+
+Re-identification risk is driven primarily by direct identifiers rather than classic quasi-identifier combinations. In practice, this means that uniqueness exists without relying on multi-field linkage. For any external sharing or broad internal access, we treat the dataset as high re-identification risk by default.
+
+We also note that k-anonymity is a diagnostic, not a guarantee. Even when k is greater than 1, homogeneity attacks and background knowledge attacks can still enable inference. Stronger protections include l-diversity and t-closeness and should be considered for any row-level dataset exports.
+
+### 8.5 GDPR article mapping
+
+We mapped the dataset-level evidence to key GDPR obligations:
+
+- Art. 5 principles: direct identifiers increase integrity and confidentiality exposure, and conditional sensitive fields raise data minimisation and purpose limitation concerns.
+- Art. 6 and Art. 13: lawful basis and transparency traceability are not evidenced because no fields indicate lawful basis, consent status, or privacy notice versioning.
+- Art. 9 (conditional): `loan_purpose = medical` introduces conditional health-related inference risk depending on context.
+- Art. 17: end-to-end deletion capability is not evidenced from repository artifacts, including deletion propagation to derived datasets and logs.
+- Art. 22 safeguards: rejected applications have a recorded reason, but most reasons are not meaningful. There are 210 rejections (42.0% of 500 records). 170 of 210 (81.0%) use `algorithm_risk_score`, limiting contestation and review in practice.
+- Art. 25: privacy by design and by default is not evidenced at the dataset layer because direct identifiers remain present in the analytical dataset.
+- Art. 5(1)(e): retention enforcement is not evidenced. We propose a retention schedule to support storage limitation compliance.
+
+### 8.6 EU AI Act high-risk classification
+
+We classify the system as high-risk under the EU AI Act because it performs automated creditworthiness assessment for natural persons (Annex III, point 5(b)). High-risk obligations apply across risk management, data governance, technical documentation, logging, transparency, and human oversight (Art. 9 to Art. 15).
+
+Based on repository artifacts, multiple obligations are not evidenced, including risk management documentation, technical documentation, and human oversight procedures. Logging is also weak at the dataset layer, with `processing_timestamp` missing for 438 of 500 records (87.6%).
 
 ### 8.7 Governance controls and DPIA
 
-This subsection summarises the highest-priority governance controls identified in `notebooks/03-privacy-demo.ipynb`. Detailed implementation guidance is provided in the dedicated Recommendations section.
+We prioritised governance controls by urgency. Detailed implementation guidance is provided in the Recommendations section.
 
 Critical priority controls:
-- Enforce privacy by default at the dataset layer by separating identity data from analytical datasets and restricting raw identifier access.
+- Enforce privacy by default by separating identity data from analytical datasets and restricting raw identifier access.
 - Replace opaque rejection reasons with a controlled taxonomy and implement applicant-facing explanations with a contestation workflow.
 - Remove or restrict conditional sensitive behavioral fields until necessity is documented, and exclude them from routine analytics and modelling by default.
 
@@ -494,29 +520,34 @@ High priority controls:
 
 Medium priority controls:
 - Implement DSAR and deletion propagation workflow across derived datasets and logs.
-- Produce technical documentation required for the high-risk system, including intended use, limitations, and monitoring.
+- Produce technical documentation required for a high-risk system, including intended use, limitations, and monitoring.
 - Establish periodic fairness monitoring to prevent regression over time.
 
 A DPIA process under GDPR Art. 35 is required for automated credit decisioning that produces significant effects on applicants. The DPIA should document necessity and proportionality, risk assessment, and mitigation measures before operational deployment.
 
 ### 8.8 Data remediation output
 
-NB03 produces a privacy-reduced analytical dataset at `data/processed/remediated_credit_applications.parquet`. This output removes direct identifiers (`full_name`, `email`, `ssn`, `ip_address`) and conditional sensitive behavioral spending fields (`spending_alcohol`, `spending_gambling`, `spending_adult_entertainment`). Protected attributes and key proxies (`gender`, `date_of_birth`, `age`, `zip_code`) are removed upstream in `02-bias-analysis.ipynb`.
+We produce a privacy-reduced analytical dataset at `data/processed/remediated_credit_applications.parquet`. This output removes:
+
+- direct identifiers: `full_name`, `email`, `ssn`, `ip_address`
+- conditional sensitive behavioral fields: `spending_alcohol`, `spending_gambling`, `spending_adult_entertainment`
+
+Protected attributes and key proxies (`gender`, `date_of_birth`, `age`, `zip_code`) are removed upstream in `02-bias-analysis.ipynb`.
 
 ### 8.9 Consolidated risk summary
 
-The table below consolidates the highest-impact privacy and governance issues evidenced in `03-privacy-demo.ipynb` and maps them to relevant GDPR and EU AI Act obligations.
+The table below consolidates the highest-impact privacy and governance issues and maps them to relevant GDPR and EU AI Act obligations.
 
 | Issue | Evidence | GDPR mapping | EU AI Act mapping | Risk level |
 |---|---|---|---|---|
 | Direct identifiers present in analytical dataset | `full_name`, `email`, `ssn`, `ip_address` present with near-complete coverage | Art. 4(1); Art. 25; Art. 5(1)(f) | Art. 10 (data governance) | Critical |
-| Decision transparency gap for rejections | 210 rejections (42.0% of 500). 170 of 210 (81.0%) use `algorithm_risk_score` | Art. 22 safeguards; Art. 13 (transparency) | Art. 13 (transparency); Art. 14 (human oversight) | Critical |
+| Decision transparency gap for rejections | 210 rejections (42.0% of 500). 170 of 210 (81.0%) use `algorithm_risk_score` | Art. 22 safeguards; Art. 13 | Art. 13; Art. 14 | Critical |
 | Weak dataset-level traceability | `processing_timestamp` missing for 438 records (87.6%) | Art. 5(2) | Art. 12 | High |
 | Conditional sensitive behavioral fields present | alcohol 11 (2.2%), gambling 7 (1.4%), adult entertainment 5 (1.0%) | Art. 5(1)(c); Art. 5(1)(b) | Art. 10 | High |
-| Conditional health-related inference | loan_purpose populated 50 (10.0%); medical 8 (1.6%), which may reveal health-related information depending on context | Art. 9 conditional; Art. 5(1)(c) | Art. 10 | High |
+| Conditional health-related inference | `loan_purpose` populated 50 (10.0%); `medical` 8 (1.6%), which may reveal health-related information depending on context | Art. 9 conditional; Art. 5(1)(c) | Art. 10 | High |
 | Lawful basis and notice traceability not evidenced | no fields indicating lawful basis, consent status, or privacy notice versioning | Art. 6; Art. 13; Art. 5(2) | Art. 13 | High |
-| Erasure workflow not evidenced | no repository evidence of DSAR and deletion propagation across derived datasets and logs | Art. 17; Art. 5(2) | Art. 12 (record-keeping implications) | Medium |
-| Retention enforcement not evidenced | no retention flags or deletion status fields | Art. 5(1)(e); Art. 5(2) | Art. 12 (log retention expectations) | High |
+| Erasure workflow not evidenced | no repository evidence of DSAR and deletion propagation across derived datasets and logs | Art. 17; Art. 5(2) | n/a | Medium |
+| Retention enforcement not evidenced | no retention flags or deletion status fields | Art. 5(1)(e); Art. 5(2) | Art. 12 | High |
 | Human oversight not evidenced | no evidence of review queue, overrides, or escalation workflow | Art. 22 safeguards | Art. 14 | High |
 | High-risk AI Act posture | creditworthiness assessment classified as high-risk (Annex III, point 5(b)) | n/a | Annex III, point 5(b); Art. 9 to Art. 15 | Critical |
 | Consent and purpose management not evidenced | no consent tracking fields or purpose binding artifacts are present | Art. 7; Art. 13; Art. 5(1)(b); Art. 5(2) | Art. 13 | High |
