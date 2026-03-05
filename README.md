@@ -31,12 +31,14 @@
    - 7.5 [Interaction Effects](#75-interaction-effects)
    - 7.6 [Fairness Metrics Summary](#76-fairness-metrics-summary)
 8. [Privacy and Governance Assessment](#8-privacy-and-governance-assessment)
-   - 8.1 [Identification of Personal Data (PII)](#81-identification-of-personal-data-pii)
-   - 8.2 [Pseudonymization Demonstration](#82-pseudonymization-demonstration)
-   - 8.3 [GDPR Compliance Assessment](#83-gdpr-compliance-assessment)
-   - 8.4 [EU AI Act Risk Classification](#84-eu-ai-act-risk-classification)
-   - 8.5 [Data Protection Risks](#85-data-protection-risks)
-   - 8.6 [Recommended Governance Controls](#86-recommended-governance-controls)
+   - 8.1 [Methodology](#methodology)
+   - 8.2 [Executive risk snapshot](#executive-risk-snapshot)
+   - 8.3 [Identification of Personal Data (PII)](#81-identification-of-personal-data-pii)
+   - 8.4 [Pseudonymization Demonstration](#82-pseudonymization-demonstration)
+   - 8.5 [GDPR Compliance Assessment](#83-gdpr-compliance-assessment)
+   - 8.6 [EU AI Act Risk Classification](#84-eu-ai-act-risk-classification)
+   - 8.7 [Data Protection Risks](#85-data-protection-risks)
+   - 8.8 [Recommended Governance Controls](#86-recommended-governance-controls)
 9. [Recommendations](#9-recommendations)
    - 9.1 [Data Quality Improvements](#91-data-quality-improvements)
    - 9.2 [Bias Mitigation Measures](#92-bias-mitigation-measures)
@@ -153,6 +155,9 @@ project-root/
 ├── docs/                 # Workflow and project planning documentation
 │
 ├── presentation/         # Video presentation file or link
+│
+├── reports/              # Reports & charts
+│   └── figures
 │
 ├── environment.yml       # Conda environment specification
 ├── requirements.txt      # Python dependencies
@@ -433,108 +438,107 @@ Female applicants aged 26–35 face the most severe disadvantage in the entire a
 
 ---
 
-## 8. Privacy and Governance Assessment
+## 8. Privacy and Governance (NB03)
 
-### 8.1 Identification of Personal Data (PII)  
+This section summarises the privacy and governance analysis implemented in `notebooks/03-privacy-demo.ipynb`. The assessment is constrained to evidence available in the bias-remediated dataset and repository artifacts. Controls that require organisational evidence (lawful basis records, consent logs, retention enforcement, DSAR workflows, access logs) are flagged as not evidenced when they cannot be validated from the repository.
 
-There are various kinds of personal data contained in the dataset, which fall under the category of personal data as defined under the General Data Protection Regulation (GDPR). Personal data is defined under the GDPR as information relating to an identified or identifiable natural person.
+### 8.1 Methodology
 
-#### Direct Identifiers (High Risk)
+The workflow follows the notebook structure. We (1) classify personal data under GDPR Art. 4(1), including direct identifiers and conditional sensitive fields, while explicitly documenting upstream quasi-identifiers removed during bias remediation; (2) quantify exposure using coverage and value distribution checks; (3) map findings to GDPR obligations and assess EU AI Act high-risk status and related obligations; and (4) propose governance controls and produce a privacy-reduced analytical dataset for downstream use.
 
-The following fields directly identify an individual:
+### 8.2 PII identification and classification 
 
-- `full_name`
-- `email`
-- `ssn`
+NB03 confirms that direct identifiers remain present in the bias-remediated dataset (`full_name`, `email`, `ssn`, `ip_address`), enabling direct re-identification without requiring quasi-identifier combinations. The notebook also documents upstream privacy exposure from the raw dataset, where `date_of_birth`, `zip_code`, and `gender` existed and were removed in `02-bias-analysis.ipynb`.
 
-These characteristics uniquely identify an individual without the need for any additional information. For instance, the Social Security Number (SSN) is considered highly sensitive personal data due to the possibility of misuse for identity theft or financial fraud. These fields require strong security measures and should not be used in analytics environments without pseudonymization.
+Conditional sensitive signals are also present. This includes behavioral spending variables (`spending_alcohol`, `spending_gambling`, `spending_adult_entertainment`) and `loan_purpose`, where the value `medical` creates conditional health-related inference exposure.
 
-#### Personal Data and Quasi-Identifiers (Moderate to High Risk)
+### 8.3 Pseudonymisation demonstration 
 
-The dataset also includes attributes that may not directly identify a person alone but can enable re-identification when combined with other data:
+NB03 demonstrates pseudonymisation as a technical safeguard aligned with GDPR Art. 25 and Recital 26. The notebook applies deterministic SHA-256 hashing for SSNs, keyed HMAC-SHA-256 for emails, replaces full names with an opaque reference token (`id`), and generalises IP addresses to reduce precision.
 
-- `date_of_birth`
-- `ip_address`
-- `zip_code`
-- `employment_status`
-- `annual_income`
-- `credit_score`
-- `loan_amount`
+The notebook explicitly distinguishes pseudonymisation from anonymisation. Pseudonymisation reduces disclosure risk while preserving internal linkage. It does not remove the system from GDPR scope.
 
-When multiple quasi-identifiers are combined (e.g., zip code + date of birth + employment status), the risk of re-identification increases substantially. This poses privacy risks even after direct identifiers are removed.
-   
-### 8.2 GDPR Compliance Assessment  
+### 8.4 Re-identification risk 
 
-Based on the dataset and its current structure, several governance and compliance gaps are observable when assessed against key GDPR principles.
+NB03 evaluates re-identification risk in the bias-remediated dataset. Because direct identifiers remain present, uniqueness and re-identification risk are driven primarily by those identifiers rather than classic quasi-identifier combinations. The notebook also documents methodological limitations of k-anonymity and references stronger protections (l-diversity, t-closeness) as relevant considerations for any external dataset sharing.
 
-#### 1. Lack of Explicit Consent Tracking
+### 8.5 GDPR article mapping 
 
-There is no field indicating whether the applicant has provided consent for data processing. GDPR requires a lawful basis for processing personal data, and where consent is used, it must be explicit and properly documented. The absence of a consent flag or timestamp creates uncertainty regarding the lawfulness of processing.
+NB03 maps dataset-level evidence to key GDPR obligations, including:
+- Art. 5 principles, with emphasis on data minimisation for conditional sensitive fields and integrity and confidentiality exposure from identifiers.
+- Art. 6 and Art. 13 governance traceability, flagged as not evidenced because lawful basis and notice versioning cannot be verified from repository artifacts.
+- Art. 9 conditional exposure, focused on `loan_purpose = medical` as a health-related inference risk depending on context.
+- Art. 17 operational readiness, where end-to-end deletion capability is not evidenced from repository artifacts.
+- Art. 22 safeguards, where rejection reasons exist but are largely not meaningful, limiting contestation and review in practice.
+- Art. 25 privacy by design and by default, flagged due to lack of dataset-layer separation between identity data and analytical data.
+- Art. 5(1)(e) storage limitation, supported by a proposed retention schedule because retention enforcement is not evidenced.
 
-#### 2. Absence of a Data Retention Policy
+### 8.6 EU AI Act high-risk classification 
 
-The dataset does not include metadata such as collection timestamps or defined retention periods. According to the GDPR storage limitation principle, personal data must be retained only for as long as necessary for the specified purpose. Without retention rules, there is a risk of excessive data storage.
+NB03 classifies the creditworthiness assessment system as high-risk under the EU AI Act (Annex III, point 5(b)). The notebook evaluates obligations under Art. 9 to Art. 15 using repository evidence and flags gaps where required artifacts are not available, including risk management, technical documentation, record-keeping, transparency, and human oversight.
 
-#### 3. Storage of Sensitive Identifiers in Raw Format
+### 8.7 Governance controls and DPIA
 
-Highly sensitive identifiers such as `ssn` and `email` are stored in raw, non-pseudonymized form. This increases exposure risk in the event of unauthorized access or data breaches. GDPR encourages pseudonymization and data minimization to reduce such risks.
+This subsection summarises the highest-priority governance controls identified in `notebooks/03-privacy-demo.ipynb`. Detailed implementation guidance is provided in the dedicated Recommendations section.
 
-#### 4. Missing Audit Trail for Automated Decisions
+Critical priority controls:
+- Enforce privacy by default at the dataset layer by separating identity data from analytical datasets and restricting raw identifier access.
+- Replace opaque rejection reasons with a controlled taxonomy and implement applicant-facing explanations with a contestation workflow.
+- Remove or restrict conditional sensitive behavioral fields until necessity is documented, and exclude them from routine analytics and modelling by default.
 
-There are no fields capturing information such as:
+High priority controls:
+- Implement complete decision audit logging with non-nullable timestamps, append-only decision events, and defined retention.
+- Implement a documented human oversight process for contested decisions and edge cases, with review actions logged in the audit trail.
+- Implement consent and purpose management for secondary uses, including consent versioning and withdrawal handling.
+- Adopt a retention schedule with automated deletion and deletion audit logs.
 
-- decision timestamp  
-- model version  
-- reviewer identity  
+Medium priority controls:
+- Implement DSAR and deletion propagation workflow across derived datasets and logs.
+- Produce technical documentation required for the high-risk system, including intended use, limitations, and monitoring.
+- Establish periodic fairness monitoring to prevent regression over time.
 
-Without these elements, it becomes difficult to demonstrate accountability, ensure transparency, or explain credit decisions to affected individuals.
+A DPIA process under GDPR Art. 35 is required for automated credit decisioning that produces significant effects on applicants. The DPIA should document necessity and proportionality, risk assessment, and mitigation measures before operational deployment.
 
-#### 5. Lack of Documented Human Oversight
+### 8.8 Data remediation output
 
-Automated credit scoring may significantly affect individuals’ financial opportunities. Under GDPR, individuals have the right not to be subject solely to automated decision-making without safeguards. The dataset does not indicate the existence of a human review process or override mechanism.
+NB03 produces a privacy-reduced analytical dataset at `data/processed/remediated_credit_applications.parquet`. This output removes direct identifiers (`full_name`, `email`, `ssn`, `ip_address`) and conditional sensitive behavioral spending fields (`spending_alcohol`, `spending_gambling`, `spending_adult_entertainment`). Protected attributes and key proxies (`gender`, `date_of_birth`, `age`, `zip_code`) are removed upstream in `02-bias-analysis.ipynb`.
 
----
+### 8.9 Consolidated risk summary
 
-Overall, while the dataset may support analytical modeling, it lacks several structural governance elements required for full GDPR compliance, particularly in relation to accountability, transparency, and data protection safeguards.
+The table below consolidates the highest-impact privacy and governance issues evidenced in `03-privacy-demo.ipynb` and maps them to relevant GDPR and EU AI Act obligations.
 
-### 8.3 EU AI Act Risk Classification  
-According to the EU’s AI Act, the credit scoring systems fall under the list of high-risk AI systems, as they may have significant effects on individuals’ access to financial services.
-High-risk systems need to have the following elements implemented:
-   - A documented risk management process
-   - Data governance and quality management
-   - Technical documentation
-   - Logging and traceability
-   - Human oversight procedures
-   - Bias monitoring and fairness evaluation
-The existing structure of the data set does not show the implementation of the above elements. For instance, the logging of decisions is not present, as is the documentation of oversight procedures.
-
-### 8.4 Data Protection Risks  
-Some of the primary identified risks from this dataset include:
-   - Identity Theft Risk due to Raw SSN Storage
-   - Re-identification Risk due to Quasi-Identifiers
-   - Lack of Explainability of Automated Decisions
-   - Discrimination Risk if Fairness is not Monitored
-   - Over-collection of Personal Data beyond Necessity
-These risks could lead to legal, reputational, and trust-related consequences if not properly addressed.
-
-### 8.5 Recommended Governance Controls  
-To minimize the risk of non-compliance and operation, the following control mechanisms can be adopted:
-   1. Pseudonymization of SSN and email data before use in analytics
-   2. Removal of full_name data from the model datasets
-   3. Development of a data retention policy
-   4. Implementation of role-based access control for sensitive data
-   5. Logging of credit decisions with timestamp and model version
-   6. Human review process for borderline and rejected cases
-   7. Monitoring of fairness and bias in the credit model
-   8. Documenting the lawful basis for processing data according to the GDPR
-These control mechanisms would greatly improve the alignment and accountability within the credit decision process.
+| Issue | Evidence | GDPR mapping | EU AI Act mapping | Risk level |
+|---|---|---|---|---|
+| Direct identifiers present in analytical dataset | `full_name`, `email`, `ssn`, `ip_address` present with near-complete coverage | Art. 4(1); Art. 25; Art. 5(1)(f) | Art. 10 (data governance) | Critical |
+| Decision transparency gap for rejections | 210 rejections (42.0% of 500). 170 of 210 (81.0%) use `algorithm_risk_score` | Art. 22 safeguards; Art. 13 (transparency) | Art. 13 (transparency); Art. 14 (human oversight) | Critical |
+| Weak dataset-level traceability | `processing_timestamp` missing for 438 records (87.6%) | Art. 5(2) | Art. 12 | High |
+| Conditional sensitive behavioral fields present | alcohol 11 (2.2%), gambling 7 (1.4%), adult entertainment 5 (1.0%) | Art. 5(1)(c); Art. 5(1)(b) | Art. 10 | High |
+| Conditional health-related inference | loan_purpose populated 50 (10.0%); medical 8 (1.6%), which may reveal health-related information depending on context | Art. 9 conditional; Art. 5(1)(c) | Art. 10 | High |
+| Lawful basis and notice traceability not evidenced | no fields indicating lawful basis, consent status, or privacy notice versioning | Art. 6; Art. 13; Art. 5(2) | Art. 13 | High |
+| Erasure workflow not evidenced | no repository evidence of DSAR and deletion propagation across derived datasets and logs | Art. 17; Art. 5(2) | Art. 12 (record-keeping implications) | Medium |
+| Retention enforcement not evidenced | no retention flags or deletion status fields | Art. 5(1)(e); Art. 5(2) | Art. 12 (log retention expectations) | High |
+| Human oversight not evidenced | no evidence of review queue, overrides, or escalation workflow | Art. 22 safeguards | Art. 14 | High |
+| High-risk AI Act posture | creditworthiness assessment classified as high-risk (Annex III, point 5(b)) | n/a | Annex III, point 5(b); Art. 9 to Art. 15 | Critical |
+| Consent and purpose management not evidenced | no consent tracking fields or purpose binding artifacts are present | Art. 7; Art. 13; Art. 5(1)(b); Art. 5(2) | Art. 13 | High |
 
 ---
 
 ## 9. Recommendations
 
 ### 9.1 Data Quality Improvements  
-tbd
+
+This subsection lists the recommended data quality controls derived from `notebooks/01-data-quality.ipynb`. The goal is to prevent recurrence of the highest-impact quality issues observed in the raw data and to improve traceability, validity, and consistency for downstream bias and privacy audits.
+
+| Priority | Control | Target field(s) | Implementation detail | Success criterion |
+|---|---|---|---|---|
+| Critical | Enforce primary key uniqueness at ingestion and quarantine duplicates | `id` | Add database uniqueness constraint and ingestion-stage duplicate check with quarantine queue | No duplicate IDs enter the processed dataset |
+| Critical | Validate income presence and type at ingestion | `annual_income` and any alternative income fields | Reject or route to review when income is missing, non-numeric, or non-positive | 100% of records have a valid canonical income value |
+| High | Enforce mandatory event timestamps | `processing_timestamp` | Make timestamp non-nullable and generated automatically at ingestion | Timestamp completeness reaches 100% |
+| High | Standardise date formats | `date_of_birth` | Convert to ISO 8601 at ingestion and store parsed date type, not free text | Zero parsing failures and consistent age derivations |
+| High | Standardise categorical encodings | `gender` and other categorical fields | Apply controlled vocabulary and mapping rules at intake | No mixed encodings in processed datasets |
+| High | Enforce numeric domain constraints | `debt_to_income`, `credit_history_months` | Validate ranges and block out-of-domain values | Zero out-of-domain values in processed datasets |
+| Medium | Validate contact fields | `email` | Apply format validation and reject malformed entries | Zero invalid email formats in processed datasets |
+| Medium | Add automated data quality monitoring | All critical fields | Scheduled checks with alerting on completeness/validity regressions | Alerts trigger on threshold breaches and are reviewed |
 
 ### 9.2 Bias Mitigation Measures
 
@@ -565,10 +569,92 @@ The gender DI ratio (overall and by age band), Demographic Parity Difference, an
 Age disparities are explained by financial risk factors in the conditional model (p = 0.720), but the mechanism requires documentation. If shorter credit history is penalising young applicants, NovaCred should evaluate alternative creditworthiness signals (e.g., income trajectory, savings rate relative to age cohort) to avoid indirect age disadvantage. Age-disaggregated approval rates must be included in ongoing monitoring.
 
 ### 9.3 Privacy Safeguards  
-tbd
+
+This section provides the detailed governance recommendations, including implementation steps, ownership, and completion criteria. The recommendations are derived from `notebooks/03-privacy-demo.ipynb` and are prioritised by urgency.
+
+### Critical priority
+
+1. Privacy by default at the dataset layer  
+Owner: Engineering and DPO  
+Implementation: Separate direct identifiers into an identity store with strict access controls and access logging. Provide a pseudonymised analytical dataset as the default artifact for modelling and audit workflows.  
+Done when: Analytical datasets contain no direct identifiers, access to identity data is role-restricted, and access is logged and reviewable.
+
+2. Decision transparency and contestation workflow  
+Owner: Engineering and Compliance  
+Implementation: Replace opaque rejection reasons with a controlled reason-code taxonomy. Provide applicant-facing explanations and define a contestation path that triggers human review.  
+Done when: Each rejection is stored with a specific reason code, explanations can be produced consistently, and contestation requests are tracked and resolved through a documented workflow.
+
+3. Data minimisation for conditional sensitive behavioral fields  
+Owner: DPO and Data Science  
+Implementation: Justify necessity of behavioral spending fields. If not required, remove from routine analytics and modelling. If retained, restrict access and bind use to documented purpose.  
+Done when: Either the fields are removed from analytical and modelling datasets, or necessity is documented and access is technically restricted with audit logging.
+
+### High priority
+
+4. Complete decision audit logging  
+Owner: Engineering  
+Implementation: Implement an append-only decision event log with non-nullable timestamps, model version identifiers, decision outputs, and reason codes. Define log retention and integrity protections.  
+Done when: All decisions generate a complete audit record, timestamps are non-nullable, and logs are retained and tamper-evident according to policy.
+
+5. Human oversight process  
+Owner: Product and Compliance  
+Implementation: Define review criteria for contested decisions and edge cases. Implement a review queue and log reviewer actions, overrides, and outcomes in the audit trail.  
+Done when: A documented review process exists, review actions are logged, and oversight can be evidenced in audits.
+
+6. Consent and purpose management for secondary uses  
+Owner: Compliance and DPO  
+Implementation: Implement consent versioning and withdrawal handling for optional data sources and secondary analytics. Enforce purpose binding so secondary uses cannot occur without a documented lawful basis.  
+Done when: Consent status and versioning are tracked, withdrawals propagate to downstream use, and purpose checks are enforced.
+
+7. Retention schedule and automated deletion  
+Owner: Compliance and Engineering  
+Implementation: Adopt a retention schedule for identity data, underwriting features, decisions, and logs. Implement automated deletion and deletion audit logs across derived datasets and decision logs.  
+Done when: Retention is implemented in systems, deletion jobs run automatically, and deletion events are logged and reviewable.
+
+### Medium priority
+
+8. DSAR and deletion propagation workflow  
+Owner: Compliance and Engineering  
+Implementation: Define an end-to-end DSAR workflow that covers identity store, analytical datasets, training exports, and decision logs. Record DSAR processing events for auditability.  
+Done when: DSAR requests can be fulfilled consistently and deletion propagation is evidenced across systems.
+
+9. Technical documentation for a high-risk system  
+Owner: Data Science  
+Implementation: Produce a model card and technical documentation describing intended use, training data provenance, performance metrics, limitations, and monitoring.  
+Done when: Documentation exists in the repository and is maintained as part of release governance.
+
+10. Fairness monitoring to prevent regression  
+Owner: Data Science  
+Implementation: Establish periodic fairness checks with thresholds and escalation. Integrate monitoring into model governance and release processes.  
+Done when: Monitoring runs on a defined schedule, thresholds are documented, and escalation actions are defined and used.
 
 ### 9.4 Governance Framework Recommendations  
-tbd
+
+This subsection proposes the operating model required to sustain GDPR and EU AI Act compliance beyond one-time technical fixes. It focuses on ownership, documentation, release gates, and monitoring routines for a high-risk creditworthiness assessment system.
+
+**Roles and accountability**
+- Assign an AI system owner responsible for end-to-end compliance and release sign-off.
+- Assign a privacy owner (DPO or delegate) responsible for DPIA maintenance, DSAR workflows, and retention policy governance.
+- Assign engineering ownership for audit logging, access logging, and retention automation.
+- Assign model risk ownership for performance monitoring and periodic fairness checks.
+
+**Required governance artifacts**
+- Maintain a DPIA package (Art. 35) and update it when processing changes.
+- Maintain high-risk AI documentation aligned to Art. 9–15 obligations, including logging design, transparency materials, and human oversight procedures.
+- Maintain model documentation (model card) and dataset documentation (data sheet) with versioning.
+
+**Release gates and change management**
+- Block production release unless: DPIA is current, audit logging is complete, rejection reason taxonomy is implemented, and human oversight procedures are documented.
+- Version datasets, models, and policy artifacts, and link decisions to these versions in audit logs.
+
+**Monitoring and reporting cadence**
+- Run periodic fairness monitoring and define escalation thresholds.
+- Review audit log quality KPIs, including timestamp completeness and distribution of rejection reason codes.
+- Perform retention and deletion job audits and track DSAR completion metrics.
+
+**DSAR and incident workflows**
+- Define a DSAR process covering identity store, analytical datasets, derived datasets, and decision logs.
+- Define an incident response workflow for privacy and AI governance issues with escalation and documentation.
 
 ---
 
