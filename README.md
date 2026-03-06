@@ -203,6 +203,17 @@ To reproduce the analysis:
    notebooks/02-bias-analysis.ipynb
    notebooks/03-privacy-demo.ipynb
 ```
+### 5.3 Data Pipeline
+
+The three analysis notebooks form a sequential pipeline where each notebook consumes the output of the previous one. No notebook modifies its input file; each produces a new dataset with progressively reduced exposure.
+
+| Step | Notebook | Input | Key actions | Output |
+|---|---|---|---|---|
+| 1 | `01-data-quality.ipynb` | `raw_credit_applications.json` (502 records) | Deduplication, empty string normalization, income reconciliation, gender standardization, type casting, flagging of implausible values | `cleaned_credit_applications.parquet` (500 records) |
+| 2 | `02-bias-analysis.ipynb` | Cleaned parquet (500 records) | Bias analysis, then removal of protected attributes (`gender`, `date_of_birth`, `age`) and proxy variable (`zip_code`) | `bias_remediated_credit_applications.parquet` (500 records) |
+| 3 | `03-privacy-demo.ipynb` | Bias-remediated parquet (500 records) | Privacy audit, then removal of direct identifiers (`full_name`, `email`, `ssn`, `ip_address`) and sensitive spending fields (`alcohol`, `gambling`, `adult_entertainment`) | `remediated_credit_applications.parquet` (500 records) |
+
+The raw dataset is excluded from version control via `.gitignore` because it contains unprotected PII. All processed outputs are stored in `data/processed/`.
 
 ## 6. Data Quality Audit
 
@@ -519,6 +530,10 @@ The privacy audit identified direct identifiers and conditional sensitive behavi
 
 This section consolidates forward-looking recommendations across all three audit dimensions. Each recommendation is mapped to the findings that motivate it and ordered by severity within its subsection. The recommendations below address production-level controls that NovaCred should implement to prevent recurrence and sustain compliance.
 
+NovaCred's credit decisioning system cannot be deployed in its current state. The bias audit confirmed discriminatory decisioning by gender that persists after all financial controls (OR = 1.98, p = 0.0004), which must be remediated before any further automated credit decisions are made. A Data Protection Impact Assessment under GDPR Art. 35 is required and must be completed before processing resumes. Six of seven EU AI Act high-risk obligations under Art. 9-15 are not evidenced, including risk management, audit logging, transparency, and human oversight, all of which are legal preconditions for deployment under the conformity assessment framework. Direct identifiers remain unprotected in the analytical dataset, and 81.2% of rejection reasons are opaque, undermining both data subject rights and regulatory defensibility.
+
+The subsections below provide 30 concrete recommendations organized across data quality controls (9.1), bias mitigation measures (9.2), privacy safeguards (9.3), and a cross-cutting governance framework (9.4).
+
 ### 9.1 Data Quality Controls
 
 R1 - Enforce primary key uniqueness at ingestion (Critical). Two duplicated application IDs were identified in the raw dataset, affecting 4 records and undermining traceability. A database-level uniqueness constraint on `id` should be enforced at ingestion, with duplicates routed to a quarantine queue for manual review rather than silently accepted. Success criterion: no duplicate IDs enter any processed dataset.
@@ -601,9 +616,9 @@ All identified data quality issues were remediated programmatically across the t
 
 | Team Member | Role | Key Contributions | Primary Sections Owned |
 |------------|------|-------------------|----------------------|
-| Michael Kania | Product Lead | _To be completed_ | README, Presentation, Coordination |
-| Dominik Hohlenstein | Data Engineer | _To be completed_ | Data loading, Cleaning, Repository setup |
-| Niklas Klaus Jürgen Düttmann | Data Scientist | _To be completed_ | Bias analysis, Fairness metrics |
-| Mohamed Aannaque | Governance Officer | _To be completed_ | Privacy assessment, GDPR mapping |
+| Michael Kania | Product Lead | README audit report, presentation, Q&A preparation, cross-notebook review and refinement, coordination | README, Presentation, Notebook 03 |
+| Dominik Hohlenstein | Data Engineer | Data loading pipeline, data quality analysis, cleaning and remediation, repository structure | Notebook 01, `src/data_loading.py` |
+| Niklas Klaus Juergen Duettmann | Data Scientist | Bias detection, fairness metrics, statistical testing, proxy and intersectional analysis | Notebook 02 |
+| Mohamed Aannaque | Governance Officer | Privacy assessment, GDPR article mapping, EU AI Act classification | Notebook 03 |
 
 _Detailed commit history is available in the repository's Git log._
