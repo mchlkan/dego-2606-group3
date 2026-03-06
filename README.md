@@ -519,6 +519,10 @@ The privacy audit identified direct identifiers and conditional sensitive behavi
 
 This section consolidates forward-looking recommendations across all three audit dimensions. Each recommendation is mapped to the findings that motivate it and ordered by severity within its subsection. The recommendations below address production-level controls that NovaCred should implement to prevent recurrence and sustain compliance.
 
+NovaCred's credit decisioning system cannot be deployed in its current state. The bias audit confirmed discriminatory decisioning by gender that persists after all financial controls (OR = 1.98, p = 0.0004), which must be remediated before any further automated credit decisions are made. A Data Protection Impact Assessment under GDPR Art. 35 is required and must be completed before processing resumes. Six of seven EU AI Act high-risk obligations under Art. 9-15 are not evidenced, including risk management, audit logging, transparency, and human oversight, all of which are legal preconditions for deployment under the conformity assessment framework. Direct identifiers remain unprotected in the analytical dataset, and 81.2% of rejection reasons are opaque, undermining both data subject rights and regulatory defensibility.
+
+The subsections below provide 30 concrete recommendations organized across data quality controls (9.1), bias mitigation measures (9.2), privacy safeguards (9.3), and a cross-cutting governance framework (9.4).
+
 ### 9.1 Data Quality Controls
 
 R1 - Enforce primary key uniqueness at ingestion (Critical). Two duplicated application IDs were identified in the raw dataset, affecting 4 records and undermining traceability. A database-level uniqueness constraint on `id` should be enforced at ingestion, with duplicates routed to a quarantine queue for manual review rather than silently accepted. Success criterion: no duplicate IDs enter any processed dataset.
