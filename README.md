@@ -211,7 +211,7 @@ The three analysis notebooks form a sequential pipeline where each notebook cons
 |---|---|---|---|---|
 | 1 | `01-data-quality.ipynb` | `raw_credit_applications.json` (502 records) | Deduplication, empty string normalization, income reconciliation, gender standardization, type casting, flagging of implausible values | `cleaned_credit_applications.parquet` (500 records) |
 | 2 | `02-bias-analysis.ipynb` | Cleaned parquet (500 records) | Bias analysis, then removal of protected attributes (`gender`, `date_of_birth`, `age`) and proxy variable (`zip_code`) | `bias_remediated_credit_applications.parquet` (500 records) |
-| 3 | `03-privacy-demo.ipynb` | Bias-remediated parquet (500 records) | Privacy audit, then removal of direct identifiers (`full_name`, `email`, `ssn`, `ip_address`) and sensitive spending fields (`alcohol`, `gambling`, `adult_entertainment`) | `remediated_credit_applications.parquet` (500 records) |
+| 3 | `03-privacy-demo.ipynb` | Bias-remediated parquet (500 records) | Privacy audit, then pseudonymisation of direct identifiers (`ssn` SHA-256, `email` HMAC-SHA-256, `full_name` replaced with id token, `ip_address` generalised to /24) and removal of sensitive spending fields (`alcohol`, `gambling`, `adult_entertainment`) | `remediated_credit_applications.parquet` (500 records) |
 
 The raw dataset is excluded from version control via `.gitignore` because it contains unprotected PII. All processed outputs are stored in `data/processed/`.
 
