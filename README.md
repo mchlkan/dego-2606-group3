@@ -605,9 +605,9 @@ All identified data quality issues were remediated programmatically across the t
 
 | Team Member | Role | Key Contributions | Primary Sections Owned |
 |------------|------|-------------------|----------------------|
-| Michael Kania | Product Lead | _To be completed_ | README, Presentation, Coordination |
-| Dominik Hohlenstein | Data Engineer | _To be completed_ | Data loading, Cleaning, Repository setup |
-| Niklas Klaus Jürgen Düttmann | Data Scientist | _To be completed_ | Bias analysis, Fairness metrics |
-| Mohamed Aannaque | Governance Officer | _To be completed_ | Privacy assessment, GDPR mapping |
+| Michael Kania | Product Lead | README audit report, presentation, Q&A preparation, cross-notebook review and refinement, coordination | README, Presentation, Notebook 03 |
+| Dominik Hohlenstein | Data Engineer | Data loading pipeline, data quality analysis, cleaning and remediation, repository structure | Notebook 01, `src/data_loading.py` |
+| Niklas Klaus Juergen Duettmann | Data Scientist | Bias detection, fairness metrics, statistical testing, proxy and intersectional analysis | Notebook 02 |
+| Mohamed Aannaque | Governance Officer | Privacy assessment, GDPR article mapping, EU AI Act classification | Notebook 03 |
 
 _Detailed commit history is available in the repository's Git log._
