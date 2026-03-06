@@ -2,8 +2,6 @@
 
 **Group 3 | DEGO 2606 Group Project – Credit Application Governance Analysis (NovaCred)**
 
----
-
 # Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
@@ -16,36 +14,36 @@
 5. [Governance and Reproducibility](#5-governance-and-reproducibility)
    - 5.1 [Version Control and Collaboration](#51-version-control-and-collaboration)
    - 5.2 [Reproducibility Instructions](#52-reproducibility-instructions)
+   - 5.3 [Data Pipeline](#53-data-pipeline)
 6. [Data Quality Audit](#6-data-quality-audit)
-   - 6.1 [Completeness](#61-completeness)
-   - 6.2 [Consistency](#62-consistency)
-   - 6.3 [Validity](#63-validity)
-   - 6.4 [Accuracy](#64-accuracy)
-   - 6.5 [Summary of Issues and Impact](#65-summary-of-issues-and-impact)
-   - 6.6 [Remediation Steps](#66-remediation-steps)
+   - 6.1 [Methodology](#61-methodology)
+   - 6.2 [Completeness](#62-completeness)
+   - 6.3 [Consistency](#63-consistency)
+   - 6.4 [Validity](#64-validity)
+   - 6.5 [Accuracy](#65-accuracy)
+   - 6.6 [Consolidated Risk Summary](#66-consolidated-risk-summary)
+   - 6.7 [Remediation Applied](#67-remediation-applied)
 7. [Bias and Fairness Analysis](#7-bias-and-fairness-analysis)
    - 7.1 [Methodology](#71-methodology)
-   - 7.2 [Gender Bias — Disparate Impact Analysis](#72-gender-bias--disparate-impact-analysis)
+   - 7.2 [Gender Bias Analysis](#72-gender-bias-analysis)
    - 7.3 [Age Bias Analysis](#73-age-bias-analysis)
-   - 7.4 [Proxy Discrimination Analysis](#74-proxy-discrimination-analysis)
-   - 7.5 [Interaction Effects](#75-interaction-effects)
-   - 7.6 [Fairness Metrics Summary](#76-fairness-metrics-summary)
-8. [Privacy and Governance (NB03)](#8-privacy-and-governance-nb03)
+   - 7.4 [Proxy Discrimination and Intersectional Effects](#74-proxy-discrimination-and-intersectional-effects)
+   - 7.5 [Consolidated Fairness Summary](#75-consolidated-fairness-summary)
+   - 7.6 [Remediation Applied](#76-remediation-applied)
+8. [Privacy and Governance](#8-privacy-and-governance)
    - 8.1 [Methodology](#81-methodology)
-   - 8.2 [PII identification and classification](#82-pii-identification-and-classification)
-   - 8.3 [Pseudonymisation demonstration](#83-pseudonymisation-demonstration)
-   - 8.4 [Re-identification risk](#84-re-identification-risk)
-   - 8.5 [GDPR article mapping](#85-gdpr-article-mapping)
-   - 8.6 [EU AI Act high-risk classification](#86-eu-ai-act-high-risk-classification)
-   - 8.7 [Governance controls and DPIA](#87-governance-controls-and-dpia)
-   - 8.8 [Data remediation output](#88-data-remediation-output)
-   - 8.9 [Consolidated risk summary](#89-consolidated-risk-summary)
-- [9. Recommendations](#9-recommendations)
+   - 8.2 [PII Identification and Classification](#82-pii-identification-and-classification)
+   - 8.3 [Pseudonymisation Demonstration](#83-pseudonymisation-demonstration)
+   - 8.4 [Re-identification Risk](#84-re-identification-risk)
+   - 8.5 [GDPR Compliance Assessment](#85-gdpr-compliance-assessment)
+   - 8.6 [EU AI Act High-Risk Classification](#86-eu-ai-act-high-risk-classification)
+   - 8.7 [Consolidated Risk Summary](#87-consolidated-risk-summary)
+   - 8.8 [Remediation Applied](#88-remediation-applied)
 9. [Recommendations](#9-recommendations)
-   - 9.1 [Data Quality Improvements](#91-data-quality-improvements)
+   - 9.1 [Data Quality Controls](#91-data-quality-controls)
    - 9.2 [Bias Mitigation Measures](#92-bias-mitigation-measures)
    - 9.3 [Privacy Safeguards](#93-privacy-safeguards)
-   - 9.4 [Governance Framework Recommendations](#94-governance-framework-recommendations)
+   - 9.4 [Governance Framework](#94-governance-framework)
 10. [Conclusion](#10-conclusion)
 11. [Contributions](#11-contributions)
 
@@ -53,7 +51,15 @@
 
 ## 1. Executive Summary
 
-tbd
+NovaCred's automated credit decisioning system presents material governance risks across data quality, fairness, and privacy that require immediate remediation before continued operation. This audit assessed 502 raw credit application records across three dimensions and identified systemic failures in data controls, direct evidence of discriminatory decisioning, and critical gaps in privacy and regulatory compliance.
+
+The data quality assessment identified 16 distinct issues across completeness, consistency, validity, and accuracy. The most consequential findings are structural rather than isolated errors: 87.6% of records lack a processing timestamp, eliminating the audit trail needed to investigate complaints or demonstrate regulatory compliance. Two duplicated application IDs undermine primary key integrity. Five records store income under an undocumented field name, and three of those records were approved for loans between 45,000 and 63,000 without the canonical income field populated, indicating that the approval pipeline does not enforce basic input validation before making legally significant credit decisions. Overall dataset risk is assessed as Moderate-High. All issues were remediated programmatically, producing a cleaned 500-record dataset for downstream analysis.
+
+The bias analysis reveals a four-fifths rule violation in loan approvals by gender (Disparate Impact ratio = 0.77). This alone would warrant investigation, but the critical finding is the conditional result: after controlling for annual income, debt-to-income ratio, credit history, savings balance, and age, male applicants remain nearly twice as likely to be approved as female applicants with identical financial profiles (OR = 1.98, p = 0.0004). This is not explainable by legitimate credit risk differences and constitutes direct evidence of discriminatory decisioning. The aggregate gender disparity masks worse outcomes at the subgroup level, with female applicants aged 26-35 facing the most severe disadvantage (DI = 0.620). ZIP code is near-perfectly collinear with gender (chi-square = 324.67, p < 0.001), creating a structural proxy discrimination risk in any future model iteration even though it does not independently predict approval in the current data. No pricing discrimination was detected in interest rates. Overall bias and fairness risk is assessed as High.
+
+The privacy and governance audit identifies critical gaps in data protection, decision transparency, and regulatory readiness. Direct identifiers (full name, email, SSN, IP address) remain in the analytical dataset at 98-100% coverage with no pseudonymisation applied at ingestion, meaning any unauthorized access would expose identifiable applicant records. Of 208 rejected applications, 169 (81.2%) cite only algorithm_risk_score as the rejection reason, which provides no actionable basis for an applicant to understand or contest the decision. This undermines the Art. 22 safeguards required for automated decisions with legal effects. The system qualifies as high-risk under EU AI Act Annex III, point 5(b), but six of seven mandatory governance obligations under Art. 9-15 are not evidenced in repository artifacts. No lawful basis documentation, consent tracking, retention enforcement, or human oversight workflow exists at the dataset or repository level. Even after removing direct identifiers, the dataset remains highly re-identifiable through financial attribute combinations alone (k = 1 for multiple quasi-identifier sets). Overall privacy and governance risk is assessed as Critical.
+
+Taken together, these findings indicate that NovaCred is operating a discriminatory, poorly documented, and insufficiently governed credit decisioning system that processes identifiable personal data without adequate technical or organisational safeguards. The 30 recommendations in Section 9 are organized across data quality controls, bias mitigation measures, privacy safeguards, and a cross-cutting governance framework. The highest priority actions are to suspend automated approvals pending a root-cause model audit, enforce privacy by default at the dataset layer, replace opaque rejection reasons with a controlled taxonomy, and initiate a Data Protection Impact Assessment under GDPR Art. 35 before any further deployment.
 
 ---
 
@@ -70,8 +76,6 @@ Email: 71916@novasbe.pt
 
 **Governance Officer — Mohamed Aannaque**  
 Email: 71359@novasbe.pt
-
----
 
 ## 3. Project Overview
 
@@ -99,8 +103,6 @@ The audit includes:
 - Identification of personal data and regulatory compliance risks under GDPR
 - Evaluation of the system's risk classification under the EU AI Act
 - Assessment of governance, auditability, and human oversight practices
-
----
 
 ### 3.3 Dataset Description
 
@@ -136,8 +138,6 @@ The dataset is organized into the following main components:
 
 Due to its nested structure, the dataset requires preprocessing and flattening before analysis. The presence of personal, demographic, and financial attributes makes it suitable for assessing data quality, fairness risks, and governance considerations in automated credit decision systems.
 
----
-
 ## 4. Repository Structure
 
 ```
@@ -166,8 +166,6 @@ project-root/
 ├── .gitignore            # Excludes raw data and sensitive files
 └── README.md             # Project audit report (this document)
 ```
-
----
 
 ## 5. Governance and Reproducibility
 
@@ -205,13 +203,20 @@ To reproduce the analysis:
    notebooks/02-bias-analysis.ipynb
    notebooks/03-privacy-demo.ipynb
 ```
----
 
 ## 6. Data Quality Audit
 
 The data quality assessment evaluates the dataset across four dimensions: completeness, consistency, validity, and accuracy. Each issue is quantified and classified by severity (Low, Moderate, High, Critical) based on its potential impact on decision integrity, model reliability, and auditability. Full technical details, code, and per-record analysis are available in `notebooks/01-data-quality.ipynb`.
 
-### 6.1 Completeness
+### 6.1 Methodology
+
+The data quality assessment was conducted on the raw dataset of 502 credit application records prior to any cleaning or deduplication. Each record was loaded and flattened from nested JSON using the canonical loader in `src/data_loading.py`, which dynamically extracts all keys from the `applicant_info`, `financials`, and `decision` objects, pivots the `spending_behavior` array into per-category columns, and captures undocumented top-level fields (`processing_timestamp`, `loan_purpose`, `notes`). No cleaning or type correction is applied at load time, preserving the raw state for audit.
+
+Issues are evaluated across four standard data quality dimensions: completeness (whether expected values are present), consistency (whether representations and constraints are uniform), validity (whether values fall within defined domains), and accuracy (whether values are plausible given domain context and cross-field relationships). Each finding is quantified with affected record counts and percentages, and classified using a four-level severity scale: Low, Moderate, High, or Critical. Hybrid ratings (Moderate-High) are used where a finding falls between levels.
+
+All remediation is applied programmatically and documented in the notebook. The cleaned dataset is exported to `data/processed/cleaned_credit_applications.parquet` (500 records after deduplication) and serves as input for all downstream analyses.
+
+### 6.2 Completeness
 
 Decision-critical financial fields are nearly complete: `debt_to_income`, `credit_history_months`, and `savings_balance` are fully populated across all 502 records. `annual_income` is missing for 5 records (1.0%), but investigation revealed that these 5 records contain an undocumented `annual_salary` field instead indicating a schema inconsistency in the data collection pipeline rather than true data loss. No record is missing income information entirely.
 
@@ -235,7 +240,7 @@ Spending behavior data is sparse at the per-category level (84–99% missing per
 
 **Overall completeness risk: Moderate.** Core decision fields are nearly complete with consistent conditional logic. Primary risks arise from empty strings masking missingness, the schema split in income fields, and structural gaps in metadata.
 
-### 6.2 Consistency
+### 6.3 Consistency
 
 Two application IDs are duplicated, affecting 4 records in total. One pair (`app_042`) is flagged as a resubmission; the other (`app_001`) is flagged as a system-generated duplicate entry error, with the second record missing most identity fields. No full row-level duplicates were detected. Primary key violations of this kind undermine traceability, audit reliability, and the integrity of any downstream joins or aggregations.
 
@@ -254,7 +259,7 @@ The `annual_income` field contains mixed Python types within a single column: 48
 
 **Overall consistency risk: Moderate.** Primary key duplication is the highest-severity finding. Representation-level inconsistencies in categorical encoding, date formats, and income data types introduce moderate analytical risk that is addressable through deterministic ingestion controls.
 
-### 6.3 Validity
+### 6.4 Validity
 
 One record reports a `debt_to_income` ratio of 1.85, exceeding the valid domain constraint of [0, 1]. The affected application was approved with an `approved_amount` of 17,000 and an `interest_rate` of 3.2%, indicating that domain validation was not enforced prior to the approval decision.
 
@@ -274,7 +279,7 @@ Two of eight assessed fields have mismatched data types: `processing_timestamp` 
 
 **Overall validity risk: Moderate.** Violations are limited in frequency, but the DTI domain breach in an approved application and negative values in decision-critical fields indicate systematic gaps in ingestion-level validation.
 
-### 6.4 Accuracy
+### 6.5 Accuracy
 
 All applicant ages fall within the plausible range of 18–100 years. No demographic accuracy concerns were identified.
 
@@ -293,45 +298,38 @@ All interest rates fall within the plausible range of 0–25%. No pricing anomal
 
 **Overall accuracy risk: Moderate–High.** Demographic and pricing variables are stable, but loan approvals without documented income in the canonical field and a spending-income contradiction represent material plausibility breaches in the decision logic.
 
-### 6.5 Summary of Issues and Impact
+### 6.6 Summary of Issues and Impact
 
 The assessment identified 16 distinct data quality issues across all four dimensions. The consolidated risk profile is as follows:
 
-| Dimension | Overall Risk | Key Drivers |
-|-----------|-------------|-------------|
-| Completeness | Moderate | Empty string masking, audit trail gaps, schema inconsistency |
-| Consistency | Moderate | Primary key duplication, categorical encoding fragmentation |
-| Validity | Moderate | DTI domain violation, negative values in decision-critical fields |
-| Accuracy | Moderate–High | Loan approvals without canonical income, spending-income contradiction |
+| # | Dimension | Finding | Evidence | Severity |
+|---|---|---|---|---|
+| 1 | Completeness | Schema inconsistency: `annual_income` vs `annual_salary` | 5 records (1.0%) | Moderate |
+| 2 | Completeness | Empty strings masking true missingness | 14 affected values across 4 fields | High |
+| 3 | Completeness | Missing `processing_timestamp` | 440 of 502 records (87.6%) | High |
+| 4 | Completeness | Missing `loan_purpose` | 452 of 502 records (90.0%) | Moderate |
+| 5 | Completeness | Clustered missingness (3+ critical fields) | 5 records (1.0%) | High |
+| 6 | Completeness | Missing `ssn` and `ip_address` | 5 records each (1.0%) | Moderate |
+| 7 | Completeness | Sparse spending categories | 84-99% missing per category (by design) | Low |
+| 8 | Consistency | Duplicate application IDs | 2 IDs affecting 4 records (0.8%) | High |
+| 9 | Consistency | Inconsistent gender encoding | 111 records using M/F instead of Male/Female (22.1%) | Moderate |
+| 10 | Consistency | Inconsistent date formats in `date_of_birth` | 3 coexisting formats across 497 records | Moderate |
+| 11 | Consistency | Mixed Python types in `annual_income` | 488 int, 8 str, 1 float | Moderate |
+| 12 | Validity | DTI outside valid domain [0, 1] | 1 record (0.2%), approved application | Moderate |
+| 13 | Validity | Negative `credit_history_months` | 2 records (0.4%), minimum value of -10 | Moderate |
+| 14 | Validity | Negative `savings_balance` | 1 record (0.2%), value of -5,000 | Moderate |
+| 15 | Validity | Invalid email format | 1 record (0.2%), missing @ symbol | Low-Moderate |
+| 16 | Accuracy | Annualized spending exceeds reported income | 1 record, income = 0, annualized spending of approximately 16,668 | High |
 
-**Overall dataset risk: Moderate–High.** The dataset is structurally sound in its core decision fields, but multiple high-severity issues directly affect auditability, underwriting defensibility, and governance compliance. The most critical findings are: (1) three loans approved without documented income in the canonical field, (2) two duplicated application IDs violating primary key integrity, (3) empty strings silently masking missing values, and (4) 87.6% of records lacking a processing timestamp.
+**Note**: Data type mismatches identified in Section 6.4 (`processing_timestamp` stored as string, `annual_income` stored as object) are consequences of issues #3 and #11 respectively and are not counted as separate findings.
 
-### 6.6 Remediation Steps
+**Overall dataset risk: Moderate–High.** 
 
-All identified issues were remediated programmatically in `notebooks/01-data-quality.ipynb` (Section 10). The cleaned dataset is exported to `data/processed/cleaned_credit_applications.parquet` and serves as the input for all downstream analyses (Notebooks 02 and 03).
+### 6.7 Remediation Applied
 
-Remediation actions applied:
+All 16 issues were remediated programmatically in `notebooks/01-data-quality.ipynb`. The following actions were applied: Income fields `annual_income` and `annual_salary` were reconciled into a unified canonical field (5 records), empty strings were normalized to NaN across 4 fields (14 values), `gender` encoding was standardized from M/F to Male/Female (111 records), `date_of_birth` was parsed to ISO 8601 datetime across all three formats (497 records), `annual_income` was cast to numeric (9 records), and duplicate application IDs were resolved by retaining the most complete record (2 duplicates removed, reducing the dataset from 502 to 500 records). Logically impossible values were set to NaN: negative `credit_history_months` (2 records), negative `savings_balance` (1 record), invalid email (1 record), and zero income (1 record). Records with 3 or more missing critical fields (5 records), approved loans with missing canonical income (3 records), and DTI outside the valid domain (1 record) were flagged for manual review but not excluded. The processing_timestamp field was cast to datetime for the 62 records where it is present. The cleaned dataset is exported to `data/processed/cleaned_credit_applications.parquet` (500 records) and serves as input for Notebook 02.
 
-| Action | Target | Effect |
-|--------|--------|--------|
-| Reconcile `annual_income` and `annual_salary` into unified field | 5 records | All records now have a canonical income value |
-| Normalize empty strings to NaN | 14 values across 4 fields | True missingness accurately reflected |
-| Standardize gender encoding (M→Male, F→Female) | 111 records | Consistent categorical representation for bias analysis |
-| Parse `date_of_birth` to ISO 8601 datetime | 497 records across 3 formats | Consistent temporal format for age derivation |
-| Cast `annual_income` to numeric | 8 string values + 1 float | Homogeneous numeric type |
-| Deduplicate on application ID (retain most complete record) | 2 duplicates removed | 500 unique records in cleaned dataset |
-| Flag records with 3+ missing critical fields | 5 records | Flagged for manual review, not excluded |
-| Flag approved loans with missing canonical income | 3 records | Flagged as decision logic anomaly |
-| Flag DTI outside valid domain [0, 1] | 1 record | Flagged for manual review |
-| Set negative `credit_history_months` to NaN | 2 records | Logically impossible values removed |
-| Set negative `savings_balance` to NaN | 1 record | Implausible value removed |
-| Set invalid email (missing @) to NaN | 1 record | Malformed value removed |
-| Replace zero income with NaN | 1 record | Distinguishes true zero from missing |
-| Cast `processing_timestamp` to datetime | 62 records | Correct temporal type |
-
-Recommended controls for production implementation are prioritized in four tiers in the notebook (Section 10.2), ranging from P1 (block approvals without income, enforce primary key constraints) through P4 (schema versioning, automated monitoring).
-
----
+*All analysis is documented and reproducible in `notebooks/01-data-quality.ipynb`.*
 
 ## 7. Bias and Fairness Analysis
 
@@ -340,10 +338,6 @@ Recommended controls for production implementation are prioritized in four tiers
 The bias analysis was conducted on 500 records after deduplication. Prior to any group-level computation, three pre-processing steps were applied: (1) inconsistent gender encoding was normalised (`M` → `Male`, `F` → `Female`, blank → `NaN`), (2) date of birth was parsed across three mixed formats (`YYYY-MM-DD`, `DD/MM/YYYY`, `YYYY/MM/DD`) to derive applicant age, and (3) one negative `credit_history_months` value was set to `NaN`.
 
 The analysis covers four dimensions: selection rate fairness (Disparate Impact ratio), statistical significance of group differences (chi-square, Kruskal-Wallis, Welch's t-test), proxy discrimination (ZIP code, spending behaviour), and intersectional effects (gender × age group). Fairlearn's `demographic_parity_difference` was used as a standardised cross-validation metric.
-
-All analysis is documented and reproducible in `notebooks/02-bias-analysis.ipynb`.
-
----
 
 ### 7.2 Gender Bias Analysis
 
@@ -362,8 +356,6 @@ The four-fifths (80%) rule classifies any DI ratio below 0.80 as indicative of p
 
 **Interest rate pricing:** Among approved applicants, males received a mean rate of **4.63%** and females **4.49%** — a gap of +0.14 pp. A Welch's t-test yields p = 0.313 (not significant). A conditional OLS regression after financial controls finds β = +0.15 pp (p = 0.288) — also not significant. No pricing discrimination is evidenced. The bias is confined to the approval decision, not the pricing of approved loans.
 
----
-
 ### 7.3 Age Bias Analysis
 
 Applicant age was derived from the `date_of_birth` field after mixed-format parsing (fixed reference date: 2025-12-31). Applicants were grouped into five standard age bands:
@@ -379,8 +371,6 @@ Applicant age was derived from the `date_of_birth` field after mixed-format pars
 Applicants under 35 are approved at approximately 44–48% — roughly 19–24 percentage points below the peak group (36–50 at 67.4%). A Kruskal-Wallis test across all five age groups yields H = 16.27, **p = 0.0027**, confirming statistically significant differences not attributable to random variation.
 
 **Conditional fairness test:** A logistic regression of `loan_approved` on age plus all financial controls finds that age is **not independently predictive** after controls (OR = 1.00 per additional year, z = −0.36, **p = 0.720**). The observed age disparities appear to be attributable to correlated differences in financial risk profiles — e.g., younger applicants tend to have shorter credit histories — rather than direct age discrimination. Severity remains Moderate; intersectional and non-linear age effects are examined in Section 7.4 below.
-
----
 
 ### 7.4 Proxy Discrimination and Intersectional Effects
 
@@ -417,9 +407,7 @@ Single-attribute analysis understates the severity of compounded disadvantage. C
 
 Female applicants aged 26–35 face the most severe disadvantage in the entire audit (DI = 0.620). The overall gender DI of 0.77 masks three subgroup violations invisible at the aggregate level. EU AI Act Annex III requires subgroup-level fairness reporting for high-risk credit scoring systems.
 
----
-
-### 7.5 Fairness Metrics Summary
+### 7.5 Consolidated Fairness Summary
 
 | Finding | Metric | Value | Threshold | Status |
 |---|---|---|---|---|
@@ -438,262 +426,176 @@ Female applicants aged 26–35 face the most severe disadvantage in the entire a
 | Female 18–25 intersectional DI | DI ratio within age band | **0.769** | < 0.80 = violation | **VIOLATION** |
 | Female 51–65 intersectional DI | DI ratio within age band | **0.760** | < 0.80 = violation | **VIOLATION** |
 
----
+**Overall bias and fairness risk: High.**
 
-## 8. Privacy and Governance (NB03)
+### 7.6 Remediation Applied
 
-This section summarises our privacy and governance audit based on `notebooks/03-privacy-demo.ipynb`. The assessment relies on evidence available in the bias-remediated dataset and repository artifacts. Where controller-side documentation is required (lawful basis records, consent logs, retention enforcement, DSAR workflows, access logs), we flag gaps as not evidenced.
+The bias analysis confirmed discriminatory decisioning by gender and identified ZIP code as a data minimisation violation due to near-perfect collinearity with gender. As remediation, the bias-remediated dataset removes all protected attributes (`gender`, `date_of_birth`, `age`, and derived fields) and the proxy variable `zip_code` from the analytical dataset. This prevents downstream notebooks and any future model iteration from accessing these fields directly. The bias-remediated dataset is exported to `data/processed/bias_remediated_credit_applications.parquet` (500 records) and serves as input for Notebook 03.
+
+*All analysis is documented and reproducible in `notebooks/02-bias-analysis.ipynb`.*
+
+## 8. Privacy and Governance
+
+This section summarises the privacy and governance audit conducted in `notebooks/03-privacy-demo.ipynb`. The assessment evaluates NovaCred's data handling practices, automated decision-making processes, and regulatory posture against GDPR (Reg. 2016/679) and the EU AI Act (Reg. 2024/1689). All findings are constrained to evidence available in the bias-remediated dataset and repository artifacts. Where controller-side documentation is required but absent (lawful basis records, consent logs, retention enforcement, access logs), the gap is flagged explicitly.
 
 ### 8.1 Methodology
 
-We followed a four-step approach:
+The privacy audit followed a four-step approach. First, all columns in the bias-remediated dataset were classified under GDPR Art. 4(1) into four tiers: direct identifiers, quasi-identifiers (removed upstream during bias remediation), conditional sensitive fields, and non-PII financial and operational attributes. Second, population coverage checks quantified the re-identification surface area for each tier, and k-anonymity tests assessed residual uniqueness risk across both identifier-based and financial attribute combinations. Third, dataset-level evidence was mapped to specific GDPR obligations (Art. 5, 6, 7, 9, 17, 22, 25) and EU AI Act high-risk obligations (Art. 9-15). Fourth, a consolidated risk assessment was produced and a privacy-reduced analytical dataset was exported for downstream use.
 
-1. We classified personal data under GDPR Art. 4(1), covering direct identifiers, upstream quasi-identifiers removed during bias remediation, and conditional sensitive fields that can enable sensitive inference depending on values.
-2. We quantified exposure using coverage checks and value distributions to identify re-identification and inference hotspots.
-3. We mapped the evidence to relevant GDPR obligations and assessed EU AI Act high-risk status and related obligations for creditworthiness assessment systems.
-4. We translated gaps into an urgency-tier action plan and produced a privacy-reduced analytical dataset for downstream use.
+### 8.2 PII Identification and Classification
 
-### 8.2 PII identification and classification
+Direct identifiers remain present in the bias-remediated dataset at near-complete coverage: `full_name` is populated for all 500 records (100.0%), `email` for 493 (98.6%), `ssn` for 496 (99.2%), and `ip_address` for 496 (99.2%). Any single field is sufficient to re-identify the vast majority of applicants without requiring combinations with other attributes. The absence of pseudonymisation at ingestion indicates a potential non-compliance with GDPR Art. 25 (data protection by design).
 
-Direct identifiers remain present in the bias-remediated dataset, enabling re-identification without requiring quasi-identifier combinations. The key direct identifiers are:
+Three quasi-identifiers (`date_of_birth`, `zip_code`, `gender`) were present in the raw dataset and documented during classification, but were removed upstream during bias remediation in `02-bias-analysis.ipynb`. Their removal reduces the quasi-identifier surface in the current dataset but does not eliminate the privacy exposure that existed at collection time.
 
-- `full_name`, `email`, `ssn`, `ip_address` (near-complete coverage)
+Conditional sensitive signals remain in the dataset. The behavioural spending fields `spending_alcohol` (11 records, 2.2%), `spending_gambling` (7 records, 1.4%), and `spending_adult_entertainment` (5 records, 1.0%) are sparsely populated but can enable inference about sensitive characteristics depending on context. Their presence creates disproportionate privacy risk relative to likely underwriting value and requires justification under Art. 5(1)(c) (data minimisation). The field `loan_purpose` is populated for 50 records (10.0%), and the value `medical` appears in 8 records (1.6%), creating conditional special-category exposure under Art. 9 where health-related information may be inferred.
 
-We also documented upstream privacy exposure from the raw dataset. The following quasi-identifiers existed at collection time and were removed during bias remediation in `02-bias-analysis.ipynb`:
+### 8.3 Pseudonymisation Demonstration
 
-- `date_of_birth`, `zip_code`, `gender`
+Pseudonymisation was demonstrated as a technical safeguard aligned with GDPR Art. 25 and Recital 26. Four techniques were applied: SHA-256 hashing on `ssn`, keyed HMAC-SHA-256 on `email` (with a separate secret key held by the controller), replacement of `full_name` with an opaque reference token (`id`), and IP address generalisation to the /24 subnet by zeroing the host octet.
 
-Conditional sensitive signals remain present:
+These transformations reduce direct disclosure risk while preserving internal record linkage for audit and consistency purposes. However, pseudonymisation does not constitute anonymisation under GDPR. The resulting dataset remains within GDPR scope because singling out and re-identification remain reasonably feasible given the means available. For low-entropy identifiers such as SSNs, keyed approaches (HMAC) reduce the risk of guess-and-check attacks because an adversary cannot validate candidate inputs without access to the secret key.
 
-- Behavioral spending fields are sparsely populated but present (`spending_alcohol` 11 records, 2.2%; `spending_gambling` 7 records, 1.4%; `spending_adult_entertainment` 5 records, 1.0%).
-- `loan_purpose` is populated for 50 records (10.0%). The value `medical` appears in 8 records (1.6%), which may reveal health-related information depending on context.
+### 8.4 Re-identification Risk
 
-### 8.3 Pseudonymisation demonstration
+Re-identification risk in the bias-remediated dataset is driven primarily by direct identifiers rather than classic quasi-identifier combinations. k-anonymity analysis confirms that single-field identifier sets (`full_name`, `email`, `ssn`, `ip_address`) each produce k equal to 1, meaning individual records are unique without requiring any attribute combination.
 
-We demonstrate pseudonymisation as a technical safeguard aligned with GDPR Art. 25 and Recital 26. The following transformations reduce disclosure risk while preserving internal linkage:
+Residual quasi-identifier risk persists even after direct identifiers are removed. Financial attribute combinations produce critically low k-values: the triple `debt_to_income` + `savings_balance` + `loan_approved` yields 499 unique groups from 499 complete records (100.0% unique), and the four-attribute combination `annual_income` + `debt_to_income` + `credit_history_months` + `savings_balance` produces 492 unique groups from 492 complete records (100.0% unique). These results confirm that the remediated dataset remains highly re-identifiable through financial attributes alone, supporting the need for k-threshold enforcement before any row-level data export.
 
-- SHA-256 hashing applied to SSNs
-- keyed HMAC-SHA-256 applied to emails
-- replacement of `full_name` with an opaque reference token (`id`)
-- IP generalisation to reduce precision
+k-anonymity is a useful diagnostic but not a sufficient privacy guarantee. Even when k is greater than 1, datasets remain vulnerable to homogeneity attacks and background knowledge attacks. Stronger protections such as l-diversity and t-closeness should be considered for any external sharing of row-level data.
 
-Pseudonymisation does not constitute anonymisation. It reduces disclosure risk, but the resulting dataset remains within GDPR scope.
+### 8.5 GDPR Compliance Assessment
 
-### 8.4 Re-identification risk
+The dataset-level evidence was mapped to seven GDPR obligations relevant to automated credit decisioning.
 
-Re-identification risk is driven primarily by direct identifiers rather than classic quasi-identifier combinations. In practice, this means that uniqueness exists without relying on multi-field linkage. For any external sharing or broad internal access, we treat the dataset as high re-identification risk by default.
+Art. 5 (processing principles): Direct identifiers at near-complete coverage materially increase exposure under Art. 5(1)(f) (integrity and confidentiality). Conditional sensitive spending fields create disproportionate privacy risk relative to likely underwriting value, raising concerns under Art. 5(1)(c) (data minimisation). The field `processing_timestamp` is missing for 438 of 500 records (87.6%), limiting traceability and weakening accountability under Art. 5(2).
 
-We also note that k-anonymity is a diagnostic, not a guarantee. Even when k is greater than 1, homogeneity attacks and background knowledge attacks can still enable inference. Stronger protections include l-diversity and t-closeness and should be considered for any row-level dataset exports.
+Art. 6 and Art. 13 (lawful basis and transparency): No dataset fields indicate the lawful basis used for processing, consent status, or privacy notice versioning. This does not prove unlawful processing, but it means the controller's Art. 6 justification cannot be evidenced or audited from repository artifacts.
 
-### 8.5 GDPR article mapping
+Art. 7 (consent): No consent tracking fields are present. If NovaCred relies on consent for any data sources or secondary purposes, no evidence exists to demonstrate that consent was freely given, specific, informed, unambiguous, and withdrawable as required by Art. 7.
 
-We mapped the dataset-level evidence to key GDPR obligations:
+Art. 9 (special category data): Conditional special-category exposure is present through `loan_purpose = medical` (8 records, 1.6%) and potentially through sensitive spending signals. No evidence of an applicable Art. 9 exception or necessity assessment is available.
 
-- Art. 5 principles: direct identifiers increase integrity and confidentiality exposure, and conditional sensitive fields raise data minimisation and purpose limitation concerns.
-- Art. 6 and Art. 13: lawful basis and transparency traceability are not evidenced because no fields indicate lawful basis, consent status, or privacy notice versioning.
-- Art. 9 (conditional): `loan_purpose = medical` introduces conditional health-related inference risk depending on context.
-- Art. 17: end-to-end deletion capability is not evidenced from repository artifacts, including deletion propagation to derived datasets and logs.
-- Art. 22 safeguards: rejected applications have a recorded reason, but most reasons are not meaningful. There are 210 rejections (42.0% of 500 records). 170 of 210 (81.0%) use `algorithm_risk_score`, limiting contestation and review in practice.
-- Art. 25: privacy by design and by default is not evidenced at the dataset layer because direct identifiers remain present in the analytical dataset.
-- Art. 5(1)(e): retention enforcement is not evidenced. We propose a retention schedule to support storage limitation compliance.
+Art. 17 (right to erasure): The dataset contains a stable record identifier (`id`) supporting record location, but `processing_timestamp` is missing for most records, limiting the ability to audit when records were processed. No repository artifacts demonstrate a deletion workflow across derived datasets, logs, and model outputs.
 
-### 8.6 EU AI Act high-risk classification
+Art. 22 (automated decision-making): All 208 rejected applications record a `rejection_reason`, but 169 of 208 (81.2%) use `algorithm_risk_score`, which does not provide an actionable explanation to a data subject. Only 39 rejections (18.8%) use more specific reasons such as `insufficient_credit_history`, `high_dti_ratio`, or `low_income`. This transparency gap limits contestation and meaningful human review.
 
-We classify the system as high-risk under the EU AI Act because it performs automated creditworthiness assessment for natural persons (Annex III, point 5(b)). High-risk obligations apply across risk management, data governance, technical documentation, logging, transparency, and human oversight (Art. 9 to Art. 15).
+Art. 25 (privacy by design): Art. 25 compliance is not evidenced across five assessed dimensions: pseudonymisation at ingestion (not implemented), data minimisation by default (not implemented), purpose limitation at schema level (not evidenced), k-anonymity for analytical exports (not implemented, k = 1), and retention limits enforced technically (not evidenced).
 
-Based on repository artifacts, multiple obligations are not evidenced, including risk management documentation, technical documentation, and human oversight procedures. Logging is also weak at the dataset layer, with `processing_timestamp` missing for 438 of 500 records (87.6%).
+### 8.6 EU AI Act High-Risk Classification
 
-### 8.7 Governance controls and DPIA
+NovaCred's credit scoring system is classified as high-risk under EU AI Act Annex III, point 5(b), which covers AI systems intended to evaluate the creditworthiness of natural persons or establish their credit score. This classification triggers obligations under Art. 9-15 (risk management, data governance, technical documentation, record-keeping, transparency, human oversight, and accuracy/robustness).
 
-We prioritised governance controls by urgency. Detailed implementation guidance is provided in the Recommendations section.
+Assessment of seven high-risk obligations against repository evidence found one partially met and six not evidenced. Art. 10 (data governance) is partially met because bias was detected upstream and protected/proxy attributes were removed, but monitoring, governance procedures, and documentation are absent. Art. 9 (risk management), Art. 11 (technical documentation), Art. 12 (record-keeping), Art. 13 (transparency), Art. 14 (human oversight), and Art. 15 (accuracy and robustness) are not evidenced in repository artifacts. The record-keeping gap is reinforced by the 87.6% missing `processing_timestamp`, which prevents reliable post-hoc auditing.
 
-Critical priority controls:
-- Enforce privacy by default by separating identity data from analytical datasets and restricting raw identifier access.
-- Replace opaque rejection reasons with a controlled taxonomy and implement applicant-facing explanations with a contestation workflow.
-- Remove or restrict conditional sensitive behavioral fields until necessity is documented, and exclude them from routine analytics and modelling by default.
+### 8.7 Consolidated Risk Summary
 
-High priority controls:
-- Implement complete decision audit logging with non-nullable timestamps, append-only decision events, and defined retention.
-- Implement a documented human oversight process for contested decisions and edge cases, with review actions logged in the audit trail.
-- Implement consent and purpose management for secondary uses, including consent versioning and withdrawal handling.
-- Adopt a retention schedule with automated deletion and deletion audit logs.
+The table below consolidates all privacy and governance findings. Evidence is stated as metrics only; detailed regulatory analysis is in the referenced notebook sections.
 
-Medium priority controls:
-- Implement DSAR and deletion propagation workflow across derived datasets and logs.
-- Produce technical documentation required for a high-risk system, including intended use, limitations, and monitoring.
-- Establish periodic fairness monitoring to prevent regression over time.
-
-A DPIA process under GDPR Art. 35 is required for automated credit decisioning that produces significant effects on applicants. The DPIA should document necessity and proportionality, risk assessment, and mitigation measures before operational deployment.
-
-### 8.8 Data remediation output
-
-We produce a privacy-reduced analytical dataset at `data/processed/remediated_credit_applications.parquet`. This output removes:
-
-- direct identifiers: `full_name`, `email`, `ssn`, `ip_address`
-- conditional sensitive behavioral fields: `spending_alcohol`, `spending_gambling`, `spending_adult_entertainment`
-
-Protected attributes and key proxies (`gender`, `date_of_birth`, `age`, `zip_code`) are removed upstream in `02-bias-analysis.ipynb`.
-
-### 8.9 Consolidated risk summary
-
-The table below consolidates the highest-impact privacy and governance issues and maps them to relevant GDPR and EU AI Act obligations.
-
-| Issue | Evidence | GDPR mapping | EU AI Act mapping | Risk level |
+| # | Finding | Evidence | Regulatory mapping | Severity |
 |---|---|---|---|---|
-| Direct identifiers present in analytical dataset | `full_name`, `email`, `ssn`, `ip_address` present with near-complete coverage | Art. 4(1); Art. 25; Art. 5(1)(f) | Art. 10 (data governance) | Critical |
-| Decision transparency gap for rejections | 210 rejections (42.0% of 500). 170 of 210 (81.0%) use `algorithm_risk_score` | Art. 22 safeguards; Art. 13 | Art. 13; Art. 14 | Critical |
-| Weak dataset-level traceability | `processing_timestamp` missing for 438 records (87.6%) | Art. 5(2) | Art. 12 | High |
-| Conditional sensitive behavioral fields present | alcohol 11 (2.2%), gambling 7 (1.4%), adult entertainment 5 (1.0%) | Art. 5(1)(c); Art. 5(1)(b) | Art. 10 | High |
-| Conditional health-related inference | `loan_purpose` populated 50 (10.0%); `medical` 8 (1.6%), which may reveal health-related information depending on context | Art. 9 conditional; Art. 5(1)(c) | Art. 10 | High |
-| Lawful basis and notice traceability not evidenced | no fields indicating lawful basis, consent status, or privacy notice versioning | Art. 6; Art. 13; Art. 5(2) | Art. 13 | High |
-| Erasure workflow not evidenced | no repository evidence of DSAR and deletion propagation across derived datasets and logs | Art. 17; Art. 5(2) | n/a | Medium |
-| Retention enforcement not evidenced | no retention flags or deletion status fields | Art. 5(1)(e); Art. 5(2) | Art. 12 | High |
-| Human oversight not evidenced | no evidence of review queue, overrides, or escalation workflow | Art. 22 safeguards | Art. 14 | High |
-| High-risk AI Act posture | creditworthiness assessment classified as high-risk (Annex III, point 5(b)) | n/a | Annex III, point 5(b); Art. 9 to Art. 15 | Critical |
-| Consent and purpose management not evidenced | no consent tracking fields or purpose binding artifacts are present | Art. 7; Art. 13; Art. 5(1)(b); Art. 5(2) | Art. 13 | High |
+| 1 | Direct identifiers present at near-complete coverage | 4 fields, 98-100% populated | GDPR Art. 4(1); Art. 25; Art. 5(1)(f) | Critical |
+| 2 | Privacy by design not evidenced across 5 dimensions | No pseudonymisation, minimisation, purpose tagging, k-threshold, or retention enforcement | GDPR Art. 25 | Critical |
+| 3 | Rejection reasons largely not meaningful | 169/208 rejections (81.2%) use `algorithm_risk_score` | GDPR Art. 22; EU AI Act Art. 13 | Critical |
+| 4 | High-risk system with 6 of 7 obligations unmet | Annex III 5(b); 1 partial, 6 not evidenced | EU AI Act Art. 9-15 | Critical |
+| 5 | Disparate impact confirmed by gender | DI = 0.77; 3 intersectional violations | EU AI Act Art. 10(2)(f) | Critical |
+| 6 | Conditional sensitive behavioral fields collected | alcohol 11 (2.2%), gambling 7 (1.4%), adult ent. 5 (1.0%) | GDPR Art. 5(1)(c) | High |
+| 7 | Health-related inference via loan_purpose | `medical` in 8/500 records (1.6%) | GDPR Art. 9 conditional | High |
+| 8 | Lawful basis and notice traceability not evidenced | No consent, lawful basis, or notice fields present | GDPR Art. 6; Art. 13; Art. 5(2) | High |
+| 9 | Weak dataset-level traceability | `processing_timestamp` missing 87.6% | GDPR Art. 5(2); EU AI Act Art. 12 | High |
+| 10 | Retention policy not evidenced | No retention flags or deletion artifacts | GDPR Art. 5(1)(e) | High |
+| 11 | Human review workflow not evidenced | No review, override, or escalation fields | GDPR Art. 22; EU AI Act Art. 14 | High |
+| 12 | Residual financial quasi-identifiers yield near-total uniqueness | `debt_to_income` + `savings_balance` + `loan_approved` 499/499 unique (100.0%) | GDPR Art. 5(1)(c); Art. 25; Recital 26 | High |
 
----
+**Overall privacy and governance risk: Critical.**
+
+### 8.8 Remediation Applied
+
+The privacy audit identified direct identifiers and conditional sensitive behavioural fields as the primary residual exposure in the bias-remediated dataset. As remediation, four direct identifiers (`full_name`, `email`, `ssn`, `ip_address`) and three conditional sensitive spending fields (`spending_alcohol`, `spending_gambling`, `spending_adult_entertainment`) were removed. The remediated dataset is exported to `data/processed/remediated_credit_applications.parquet` (500 records). This dataset represents the final privacy-reduced analytical output of the three-notebook pipeline. Remaining attributes still constitute personal data in a credit decisioning context and require appropriate access control, retention enforcement, and audit logging.
+
+*All analysis is documented and reproducible in `notebooks/03-privacy-demo.ipynb`.*
 
 ## 9. Recommendations
 
-### 9.1 Data Quality Improvements  
+This section consolidates forward-looking recommendations across all three audit dimensions. Each recommendation is mapped to the findings that motivate it and ordered by severity within its subsection. The recommendations below address production-level controls that NovaCred should implement to prevent recurrence and sustain compliance.
 
-This subsection lists the recommended data quality controls derived from `notebooks/01-data-quality.ipynb`. The goal is to prevent recurrence of the highest-impact quality issues observed in the raw data and to improve traceability, validity, and consistency for downstream bias and privacy audits.
+### 9.1 Data Quality Controls
 
-| Priority | Control | Target field(s) | Implementation detail | Success criterion |
-|---|---|---|---|---|
-| Critical | Enforce primary key uniqueness at ingestion and quarantine duplicates | `id` | Add database uniqueness constraint and ingestion-stage duplicate check with quarantine queue | No duplicate IDs enter the processed dataset |
-| Critical | Validate income presence and type at ingestion | `annual_income` and any alternative income fields | Reject or route to review when income is missing, non-numeric, or non-positive | 100% of records have a valid canonical income value |
-| High | Enforce mandatory event timestamps | `processing_timestamp` | Make timestamp non-nullable and generated automatically at ingestion | Timestamp completeness reaches 100% |
-| High | Standardise date formats | `date_of_birth` | Convert to ISO 8601 at ingestion and store parsed date type, not free text | Zero parsing failures and consistent age derivations |
-| High | Standardise categorical encodings | `gender` and other categorical fields | Apply controlled vocabulary and mapping rules at intake | No mixed encodings in processed datasets |
-| High | Enforce numeric domain constraints | `debt_to_income`, `credit_history_months` | Validate ranges and block out-of-domain values | Zero out-of-domain values in processed datasets |
-| Medium | Validate contact fields | `email` | Apply format validation and reject malformed entries | Zero invalid email formats in processed datasets |
-| Medium | Add automated data quality monitoring | All critical fields | Scheduled checks with alerting on completeness/validity regressions | Alerts trigger on threshold breaches and are reviewed |
+R1 - Enforce primary key uniqueness at ingestion (Critical). Two duplicated application IDs were identified in the raw dataset, affecting 4 records and undermining traceability. A database-level uniqueness constraint on `id` should be enforced at ingestion, with duplicates routed to a quarantine queue for manual review rather than silently accepted. Success criterion: no duplicate IDs enter any processed dataset.
+
+R2 - Validate income presence and type at ingestion (Critical). Five records used an undocumented `annual_salary` field instead of `annual_income`, and three of those records were approved without the canonical income field populated. Income must be validated as present, numeric, and positive at ingestion. Records failing this check should be blocked from automated approval until reviewed. Success criterion: 100% of records have a valid canonical income value before any decision is made.
+
+R3 - Enforce mandatory event timestamps (High). The `processing_timestamp` field is missing for 440 of 502 records (87.6%), which limits traceability and weakens the audit trail. Timestamps should be non-nullable and generated automatically at ingestion. Success criterion: timestamp completeness reaches 100%.
+
+R4 - Standardise date formats at ingestion (High). Three coexisting date formats were identified in `date_of_birth` across 497 records. All dates should be converted to ISO 8601 at ingestion and stored as a parsed date type rather than free text. Success criterion: zero parsing failures and consistent age derivations across all records.
+
+R5 - Standardise categorical encodings at ingestion (High). The `gender` field uses four encodings for two logical categories, affecting 111 records (22.1%). Controlled vocabulary mappings should be applied at intake for all categorical fields. Success criterion: no mixed encodings in processed datasets.
+
+R6 - Enforce numeric domain constraints (High). One record has a `debt_to_income` ratio of 1.85, exceeding the valid [0, 1] domain, and two records have negative `credit_history_months` values. Domain validation rules should be enforced at ingestion to block out-of-range values. Success criterion: zero out-of-domain values in processed datasets.
+
+R7 - Validate contact field formats (Medium). One email address is syntactically invalid (missing the @ symbol). Format validation should be applied at ingestion for contact fields. Success criterion: zero invalid email formats in processed datasets.
+
+R8 - Add automated data quality monitoring (Medium). Scheduled completeness and validity checks should be implemented across all critical fields, with alerting on threshold breaches. Success criterion: alerts trigger on regressions and are reviewed within a defined SLA.
 
 ### 9.2 Bias Mitigation Measures
 
-The following recommendations are derived directly from the findings in Section 7 and are ordered by severity.
+R1 - Suspend automated approvals and conduct root-cause model audit (Critical). The conditional logistic regression confirms that gender predicts loan approval independently of all financial risk controls (OR = 1.98, 95% CI: 1.36-2.89, p = 0.0004). This is not a descriptive disparity but statistical evidence that the decisioning mechanism discriminates on the basis of gender after accounting for every available measure of creditworthiness. NovaCred must place a governance hold on automated credit approvals pending investigation, audit all model features for gender-correlated effects, and document the root cause and remediation plan for regulators. No new automated credit decisions should be finalised until the source of the conditional disparity is identified and addressed. Regulatory basis: GDPR Article 22, EU AI Act Annex III.
 
-**R1 — Suspend automated approvals and conduct root-cause model audit (Critical)**
+R2 - Remove ZIP code from all model inputs immediately (High). ZIP code is near-perfectly collinear with gender (NYC: 88.8% male, LA: 93.5% female; chi-square = 324.67, p < 0.001). Although the conditional analysis shows ZIP does not independently predict approval at present (OR = 1.14, p = 0.67), retaining a feature with this level of demographic collinearity violates the GDPR data minimisation principle (Art. 5(1)(c)) and creates a structural risk that any future model trained on this data will encode gender discrimination. ZIP code must be removed immediately. Any geographic signal may only be reintroduced via a financially justified proxy (for example regional unemployment rate) after a privacy impact assessment.
 
-The conditional logistic regression confirms that gender predicts loan approval independently of all financial risk controls (OR = 1.98, 95% CI: 1.36–2.89, p = 0.0004). This is not a descriptive disparity — it is statistical evidence that the decisioning mechanism discriminates on the basis of gender after accounting for every available measure of creditworthiness. NovaCred must: (1) place a governance hold on automated credit approvals pending investigation; (2) audit all model features for gender-correlated effects; (3) document the root cause and remediation plan for regulators. No new automated credit decisions should be finalised until the source of the conditional disparity is identified and addressed. Regulatory basis: GDPR Article 22; EU AI Act Annex III; ECOA.
+R3 - Remediate intersectional disparities for high-risk subgroups (High). Three gender x age subgroups show DI ratio violations: female 26-35 (DI = 0.620, worst case), female 18-25 (DI = 0.769), and female 51-65 (DI = 0.760). These subgroup-level violations are invisible in aggregate gender analysis (overall DI = 0.77) and require targeted investigation. NovaCred must implement disaggregated monitoring at the gender x age level and treat each violating subgroup as a separate fairness incident requiring a remediation plan.
 
-**R2 — Remove ZIP code from all model inputs immediately (High)**
+R4 - DPO review of sensitive spending categories and lawful basis assessment (High). The fields `spending_adult_entertainment`, `spending_gambling`, and `spending_alcohol` must be subject to an immediate Data Protection Officer review under GDPR Article 9. There is no demonstrated credit-relevance justification for collecting lifestyle behavioural data of this nature. These categories must be removed from any model feature set as a default position. Reinstatement requires a documented necessity assessment, a GDPR Article 9(2) lawful basis, and a proportionality review.
 
-ZIP code is near-perfectly collinear with gender (NYC: 88.8% male, LA: 93.5% female; χ²(2) = 324.67, p < 0.001). Although the conditional analysis shows ZIP does not independently predict approval at present (OR = 1.14, p = 0.67), retaining a feature with this level of demographic collinearity violates the GDPR data minimisation principle (Art. 5(1)(c)) and creates a structural risk that any future model trained on this data will encode gender discrimination. ZIP code must be removed immediately; any geographic signal may only be reintroduced via a financially justified proxy (e.g., regional unemployment rate) after a privacy impact assessment.
+R5 - Implement disaggregated ongoing monitoring (High). The gender DI ratio (overall and by age band), Demographic Parity Difference, and conditional logistic OR for gender must be recomputed on every batch of credit decisions and tracked over time. Alert thresholds: DI below 0.85 triggers early warning, DI below 0.80 triggers mandatory review, and conditional OR with p below 0.05 triggers immediate escalation. Monitoring logs must be retained and available to regulators under EU AI Act Article 9.
 
-**R3 — Remediate intersectional disparities for high-risk subgroups (High)**
+R6 - Investigate age-based financial risk correlation (Moderate). Age disparities are explained by financial risk factors in the conditional model (p = 0.720), but the mechanism requires documentation. If shorter credit history is penalising young applicants, NovaCred should evaluate alternative creditworthiness signals (for example income trajectory or savings rate relative to age cohort) to avoid indirect age disadvantage. Age-disaggregated approval rates must be included in ongoing monitoring.
 
-Three gender × age subgroups show DI ratio violations: female 26–35 (DI = 0.620, worst case), female 18–25 (DI = 0.769), and female 51–65 (DI = 0.760). These subgroup-level violations are invisible in aggregate gender analysis (overall DI = 0.77) and require targeted investigation. NovaCred must implement disaggregated monitoring at the gender × age level and treat each violating subgroup as a separate fairness incident requiring a remediation plan.
+### 9.3 Privacy Safeguards
 
-**R4 — DPO review of sensitive spending categories and lawful basis assessment (High)**
+R1 - Enforce privacy by default at the dataset layer (Critical). Direct identifiers (`full_name`, `email`, `ssn`, `ip_address`) remain in the analytical dataset at 98-100% coverage, enabling re-identification without quasi-identifier combinations. NovaCred must separate direct identifiers into an access-restricted identity store and provide a pseudonymised analytical dataset as the default artifact for modelling and audit workflows. Access to raw identifiers should be role-restricted with access logging. Owner: Engineering and DPO. Done when: analytical datasets contain no direct identifiers, access to identity data is role-restricted, and access is logged and reviewable.
 
-`spending_adult_entertainment`, `spending_gambling`, and `spending_alcohol` must be subject to an immediate Data Protection Officer review under GDPR Article 9. There is no demonstrated credit-relevance justification for collecting lifestyle behavioural data of this nature. These categories must be removed from any model feature set as a default position; reinstatement requires a documented necessity assessment, a GDPR Article 9(2) lawful basis, and a proportionality review.
+R2 - Replace opaque rejection reasons with a controlled taxonomy (Critical). Of 208 rejections, 169 (81.2%) use `algorithm_risk_score`, which provides no actionable explanation for contestation or human review. NovaCred must implement a controlled reason-code taxonomy with applicant-facing explanations and a defined contestation path that triggers human review. Owner: Engineering and Compliance. Done when: each rejection is stored with a specific reason code, explanations can be produced consistently, and contestation requests are tracked and resolved through a documented workflow.
 
-**R5 — Implement disaggregated ongoing monitoring (High)**
+R3 - Restrict conditional sensitive behavioural fields (Critical). The spending fields `spending_alcohol` (11 records, 2.2%), `spending_gambling` (7 records, 1.4%), and `spending_adult_entertainment` (5 records, 1.0%) create disproportionate privacy risk relative to likely underwriting value. NovaCred must justify the necessity of these fields under Art. 5(1)(c). If necessity is not demonstrated, they should be removed from routine analytics and modelling by default. If retained, access must be restricted and bound to a documented purpose. Owner: DPO and Data Science. Done when: either the fields are removed from analytical and modelling datasets, or necessity is documented and access is technically restricted with audit logging.
 
-The gender DI ratio (overall and by age band), Demographic Parity Difference, and conditional logistic OR for gender must be recomputed on every batch of credit decisions and tracked over time. Alert thresholds: DI < 0.85 (early warning), DI < 0.80 (mandatory review), conditional OR p < 0.05 (immediate escalation). Monitoring logs must be retained and available to regulators under EU AI Act Article 9.
+R4 - Initiate a DPIA for automated credit decisioning (Critical). A Data Protection Impact Assessment is required under GDPR Art. 35(3)(a) because the system performs systematic and extensive automated processing that produces significant effects on applicants. The DPIA must document necessity and proportionality, risk assessment for data subject rights, and mitigation measures. No further model deployment should occur until the DPIA is complete. Owner: DPO. Done when: DPIA elements under Art. 35(7) are documented, reviewed, and approved.
 
-**R6 — Investigate age-based financial risk correlation (Moderate)**
+R5 - Implement complete decision audit logging (High). The `processing_timestamp` field is missing for 438 of 500 records (87.6%) in the post-deduplication dataset, preventing reliable post-hoc auditing. NovaCred must implement an append-only decision event log with non-nullable timestamps, model version identifiers, decision outputs, and reason codes. Log retention and integrity protections must be defined. Owner: Engineering. Done when: all decisions generate a complete audit record, timestamps are non-nullable, and logs are retained and tamper-evident according to policy.
 
-Age disparities are explained by financial risk factors in the conditional model (p = 0.720), but the mechanism requires documentation. If shorter credit history is penalising young applicants, NovaCred should evaluate alternative creditworthiness signals (e.g., income trajectory, savings rate relative to age cohort) to avoid indirect age disadvantage. Age-disaggregated approval rates must be included in ongoing monitoring.
+R6 - Implement a human oversight process (High). No evidence of a review queue, override mechanism, or escalation workflow exists in repository artifacts. NovaCred must define review criteria for contested decisions and edge cases, implement a review queue, and log reviewer actions, overrides, and outcomes in the audit trail. Owner: Product and Compliance. Done when: a documented review process exists, review actions are logged, and oversight can be evidenced in audits.
 
-### 9.3 Privacy Safeguards  
+R7 - Implement consent and purpose management (High). No consent tracking fields or purpose binding artifacts are present in the dataset. NovaCred must implement consent versioning and withdrawal handling for optional data sources and secondary analytics, with purpose binding enforced so secondary uses cannot occur without a documented lawful basis. Owner: Compliance and DPO. Done when: consent status and versioning are tracked, withdrawals propagate to downstream use, and purpose checks are enforced.
 
-This section provides the detailed governance recommendations, including implementation steps, ownership, and completion criteria. The recommendations are derived from `notebooks/03-privacy-demo.ipynb` and are prioritised by urgency.
+R8 - Adopt a retention schedule with automated deletion (High). No retention flags or deletion status fields exist in the dataset. NovaCred must adopt a retention schedule for identity data, underwriting features, decisions, and logs, and implement automated deletion with deletion audit logs across derived datasets and decision logs. Owner: Compliance and Engineering. Done when: retention is implemented in systems, deletion jobs run automatically, and deletion events are logged and reviewable.
 
-### Critical priority
+R9 - Implement DSAR and deletion propagation (Medium). No repository evidence demonstrates an end-to-end data subject access request workflow or deletion propagation across derived datasets and logs. NovaCred must define a DSAR workflow covering the identity store, analytical datasets, training exports, and decision logs, and record DSAR processing events for auditability. Owner: Compliance and Engineering. Done when: DSAR requests can be fulfilled consistently and deletion propagation is evidenced across systems.
 
-1. Privacy by default at the dataset layer  
-Owner: Engineering and DPO  
-Implementation: Separate direct identifiers into an identity store with strict access controls and access logging. Provide a pseudonymised analytical dataset as the default artifact for modelling and audit workflows.  
-Done when: Analytical datasets contain no direct identifiers, access to identity data is role-restricted, and access is logged and reviewable.
+R10 - Produce technical documentation for high-risk AI system (Medium). No model card, data sheet, or technical specification exists in repository artifacts, leaving six of seven EU AI Act high-risk obligations (Art. 9-15) not evidenced. NovaCred must produce documentation describing intended use, training data provenance, performance metrics, limitations, and monitoring. Owner: Data Science. Done when: documentation exists in the repository and is maintained as part of release governance.
 
-2. Decision transparency and contestation workflow  
-Owner: Engineering and Compliance  
-Implementation: Replace opaque rejection reasons with a controlled reason-code taxonomy. Provide applicant-facing explanations and define a contestation path that triggers human review.  
-Done when: Each rejection is stored with a specific reason code, explanations can be produced consistently, and contestation requests are tracked and resolved through a documented workflow.
+R11 - Establish ongoing fairness monitoring (Medium). The gender DI ratio, intersectional DI ratios, and conditional logistic OR must be monitored continuously to prevent bias regression. NovaCred must establish periodic fairness checks with defined thresholds and escalation procedures integrated into model governance and release processes. Owner: Data Science. Done when: monitoring runs on a defined schedule, thresholds are documented, and escalation actions are defined and used.
 
-3. Data minimisation for conditional sensitive behavioral fields  
-Owner: DPO and Data Science  
-Implementation: Justify necessity of behavioral spending fields. If not required, remove from routine analytics and modelling. If retained, restrict access and bind use to documented purpose.  
-Done when: Either the fields are removed from analytical and modelling datasets, or necessity is documented and access is technically restricted with audit logging.
+### 9.4 Governance Framework
 
-### High priority
+This subsection proposes the operating model required to sustain GDPR and EU AI Act compliance beyond one-time technical fixes. It covers ownership, documentation, release gates, and monitoring routines for a high-risk creditworthiness assessment system.
 
-4. Complete decision audit logging  
-Owner: Engineering  
-Implementation: Implement an append-only decision event log with non-nullable timestamps, model version identifiers, decision outputs, and reason codes. Define log retention and integrity protections.  
-Done when: All decisions generate a complete audit record, timestamps are non-nullable, and logs are retained and tamper-evident according to policy.
+NovaCred must assign four governance roles: an AI system owner responsible for end-to-end compliance and release sign-off, a privacy owner (DPO or delegate) responsible for DPIA maintenance, DSAR workflows, and retention policy governance, an engineering owner for audit logging, access logging, and retention automation, and a model risk owner for performance monitoring and periodic fairness checks.
 
-5. Human oversight process  
-Owner: Product and Compliance  
-Implementation: Define review criteria for contested decisions and edge cases. Implement a review queue and log reviewer actions, overrides, and outcomes in the audit trail.  
-Done when: A documented review process exists, review actions are logged, and oversight can be evidenced in audits.
+Three governance artifacts must be maintained on an ongoing basis. The DPIA package under Art. 35 must be updated whenever processing changes materially. High-risk AI documentation aligned to Art. 9-15 obligations must cover logging design, transparency materials, and human oversight procedures. Model documentation (model card) and dataset documentation (data sheet) must be versioned and linked to decision records.
 
-6. Consent and purpose management for secondary uses  
-Owner: Compliance and DPO  
-Implementation: Implement consent versioning and withdrawal handling for optional data sources and secondary analytics. Enforce purpose binding so secondary uses cannot occur without a documented lawful basis.  
-Done when: Consent status and versioning are tracked, withdrawals propagate to downstream use, and purpose checks are enforced.
+Release gates must block production deployment unless four conditions are met: the DPIA is current, audit logging is complete, the rejection reason taxonomy is implemented, and human oversight procedures are documented. All datasets, models, and policy artifacts must be versioned, and decisions must be linked to these versions in audit logs.
 
-7. Retention schedule and automated deletion  
-Owner: Compliance and Engineering  
-Implementation: Adopt a retention schedule for identity data, underwriting features, decisions, and logs. Implement automated deletion and deletion audit logs across derived datasets and decision logs.  
-Done when: Retention is implemented in systems, deletion jobs run automatically, and deletion events are logged and reviewable.
+Monitoring must follow a defined cadence. Fairness metrics must be recomputed on each decision batch with escalation at defined thresholds. Audit log quality KPIs, including timestamp completeness and rejection reason code distribution, must be reviewed periodically. Retention and deletion job execution must be audited, and DSAR completion metrics must be tracked and reported.
 
-### Medium priority
-
-8. DSAR and deletion propagation workflow  
-Owner: Compliance and Engineering  
-Implementation: Define an end-to-end DSAR workflow that covers identity store, analytical datasets, training exports, and decision logs. Record DSAR processing events for auditability.  
-Done when: DSAR requests can be fulfilled consistently and deletion propagation is evidenced across systems.
-
-9. Technical documentation for a high-risk system  
-Owner: Data Science  
-Implementation: Produce a model card and technical documentation describing intended use, training data provenance, performance metrics, limitations, and monitoring.  
-Done when: Documentation exists in the repository and is maintained as part of release governance.
-
-10. Fairness monitoring to prevent regression  
-Owner: Data Science  
-Implementation: Establish periodic fairness checks with thresholds and escalation. Integrate monitoring into model governance and release processes.  
-Done when: Monitoring runs on a defined schedule, thresholds are documented, and escalation actions are defined and used.
-
-### 9.4 Governance Framework Recommendations  
-
-This subsection proposes the operating model required to sustain GDPR and EU AI Act compliance beyond one-time technical fixes. It focuses on ownership, documentation, release gates, and monitoring routines for a high-risk creditworthiness assessment system.
-
-**Roles and accountability**
-- Assign an AI system owner responsible for end-to-end compliance and release sign-off.
-- Assign a privacy owner (DPO or delegate) responsible for DPIA maintenance, DSAR workflows, and retention policy governance.
-- Assign engineering ownership for audit logging, access logging, and retention automation.
-- Assign model risk ownership for performance monitoring and periodic fairness checks.
-
-**Required governance artifacts**
-- Maintain a DPIA package (Art. 35) and update it when processing changes.
-- Maintain high-risk AI documentation aligned to Art. 9–15 obligations, including logging design, transparency materials, and human oversight procedures.
-- Maintain model documentation (model card) and dataset documentation (data sheet) with versioning.
-
-**Release gates and change management**
-- Block production release unless: DPIA is current, audit logging is complete, rejection reason taxonomy is implemented, and human oversight procedures are documented.
-- Version datasets, models, and policy artifacts, and link decisions to these versions in audit logs.
-
-**Monitoring and reporting cadence**
-- Run periodic fairness monitoring and define escalation thresholds.
-- Review audit log quality KPIs, including timestamp completeness and distribution of rejection reason codes.
-- Perform retention and deletion job audits and track DSAR completion metrics.
-
-**DSAR and incident workflows**
-- Define a DSAR process covering identity store, analytical datasets, derived datasets, and decision logs.
-- Define an incident response workflow for privacy and AI governance issues with escalation and documentation.
-
----
+An incident response workflow must be defined for privacy and AI governance issues, covering detection, escalation, remediation, and post-incident documentation. DSAR processing must follow a defined workflow covering the identity store, analytical datasets, derived datasets, and decision logs.
 
 ## 10. Conclusion
 
-tbd
+This audit assessed NovaCred's automated credit decisioning pipeline across data quality, fairness, and privacy using evidence available in the dataset and repository artifacts. The assessment identified 16 data quality issues (overall risk: Moderate-High), confirmed discriminatory decisioning by gender that persists after all financial controls (overall risk: High), and documented critical privacy and governance gaps including unprotected direct identifiers, opaque rejection reasons, and six of seven EU AI Act high-risk obligations not evidenced (overall risk: Critical).
 
----
+The three most consequential findings are interconnected. The gender bias finding (OR = 1.98, p = 0.0004) means NovaCred is making systematically unfair credit decisions. The rejection transparency finding (81.2% opaque reasons) means affected applicants cannot meaningfully contest those decisions. The absence of audit logging (87.6% missing timestamps) means neither NovaCred nor a regulator can investigate when or how these decisions were made. Together, these create a governance failure that is greater than the sum of its parts: a system that discriminates, cannot explain itself, and cannot be audited.
+
+All identified data quality issues were remediated programmatically across the three-notebook pipeline. Protected attributes and proxy variables were removed to prevent direct discriminatory feature access, and direct identifiers and sensitive behavioural fields were removed to reduce re-identification exposure. These dataset-level remediations address the immediate analytical risks but do not resolve the underlying governance deficits. The 30 recommendations in Section 9 provide a structured path from the current state to a compliant operating posture, organized by urgency and mapped to specific regulatory obligations. Remediation feasibility is high. The critical-priority actions (suspension of automated approvals, privacy by default, rejection reason taxonomy, and DPIA initiation) are technically implementable and should be completed before any further model deployment.
 
 ## 11. Contributions
 
