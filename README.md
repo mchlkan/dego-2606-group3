@@ -203,6 +203,17 @@ To reproduce the analysis:
    notebooks/02-bias-analysis.ipynb
    notebooks/03-privacy-demo.ipynb
 ```
+### 5.3 Data Pipeline
+
+The three analysis notebooks form a sequential pipeline where each notebook consumes the output of the previous one. No notebook modifies its input file; each produces a new dataset with progressively reduced exposure.
+
+| Step | Notebook | Input | Key actions | Output |
+|---|---|---|---|---|
+| 1 | `01-data-quality.ipynb` | `raw_credit_applications.json` (502 records) | Deduplication, empty string normalization, income reconciliation, gender standardization, type casting, flagging of implausible values | `cleaned_credit_applications.parquet` (500 records) |
+| 2 | `02-bias-analysis.ipynb` | Cleaned parquet (500 records) | Bias analysis, then removal of protected attributes (`gender`, `date_of_birth`, `age`) and proxy variable (`zip_code`) | `bias_remediated_credit_applications.parquet` (500 records) |
+| 3 | `03-privacy-demo.ipynb` | Bias-remediated parquet (500 records) | Privacy audit, then removal of direct identifiers (`full_name`, `email`, `ssn`, `ip_address`) and sensitive spending fields (`alcohol`, `gambling`, `adult_entertainment`) | `remediated_credit_applications.parquet` (500 records) |
+
+The raw dataset is excluded from version control via `.gitignore` because it contains unprotected PII. All processed outputs are stored in `data/processed/`.
 
 ## 6. Data Quality Audit
 
