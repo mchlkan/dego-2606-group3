@@ -90,18 +90,18 @@ This document outlines the task breakdown, ownership, timeline, and deliverable 
 
 ### Notebooks
 
-- [ ] `01-data-quality.ipynb` — Identifies and quantifies all data quality issues, proposes remediation
-- [ ] `02-bias-analysis.ipynb` — DI ratio, age bias, proxy analysis, interaction effects, visualizations
-- [ ] `03-privacy-demo.ipynb` — PII identification, pseudonymization demo, GDPR mapping
+- [x] `01-data-quality.ipynb` — Identifies and quantifies all data quality issues, proposes remediation
+- [x] `02-bias-analysis.ipynb` — DI ratio, age bias, proxy analysis, interaction effects, visualizations
+- [x] `03-privacy-demo.ipynb` — PII identification, pseudonymization demo, GDPR mapping
 
 ### README
 
-- [ ] Executive Summary with key metrics
-- [ ] Data Quality Audit sections filled with findings
-- [ ] Bias and Fairness sections filled with findings
-- [ ] Privacy and Governance sections filled with findings
-- [ ] Recommendations are concrete and actionable
-- [ ] Conclusion synthesizes findings across all three areas
+- [x] Executive Summary with key metrics
+- [x] Data Quality Audit sections filled with findings
+- [x] Bias and Fairness sections filled with findings
+- [x] Privacy and Governance sections filled with findings
+- [x] Recommendations are concrete and actionable
+- [x] Conclusion synthesizes findings across all three areas
 - [ ] Contributions table completed with specific contributions per member
 
 ### Presentation
