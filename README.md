@@ -2,6 +2,8 @@
 
 **Group 3 | DEGO 2606 Group Project – Credit Application Governance Analysis (NovaCred)**
 
+**Link to presentation video:** https://youtu.be/QyErHDbmFpk
+
 # Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
@@ -21,14 +23,14 @@
    - 6.3 [Consistency](#63-consistency)
    - 6.4 [Validity](#64-validity)
    - 6.5 [Accuracy](#65-accuracy)
-   - 6.6 [Consolidated Risk Summary](#66-consolidated-risk-summary)
+   - 6.6 [Consolidated Quality Risk Summary](#66-consolidated-quality-risk-summary)
    - 6.7 [Remediation Applied](#67-remediation-applied)
 7. [Bias and Fairness Analysis](#7-bias-and-fairness-analysis)
    - 7.1 [Methodology](#71-methodology)
    - 7.2 [Gender Bias Analysis](#72-gender-bias-analysis)
    - 7.3 [Age Bias Analysis](#73-age-bias-analysis)
    - 7.4 [Proxy Discrimination and Intersectional Effects](#74-proxy-discrimination-and-intersectional-effects)
-   - 7.5 [Consolidated Fairness Summary](#75-consolidated-fairness-summary)
+   - 7.5 [Consolidated Fairness Risk Summary](#75-consolidated-fairness-risk-summary)
    - 7.6 [Remediation Applied](#76-remediation-applied)
 8. [Privacy and Governance](#8-privacy-and-governance)
    - 8.1 [Methodology](#81-methodology)
@@ -37,7 +39,7 @@
    - 8.4 [Re-identification Risk](#84-re-identification-risk)
    - 8.5 [GDPR Compliance Assessment](#85-gdpr-compliance-assessment)
    - 8.6 [EU AI Act High-Risk Classification](#86-eu-ai-act-high-risk-classification)
-   - 8.7 [Consolidated Risk Summary](#87-consolidated-risk-summary)
+   - 8.7 [Consolidated Privacy Risk Summary](#87-consolidated-privacy-risk-summary)
    - 8.8 [Remediation Applied](#88-remediation-applied)
 9. [Recommendations](#9-recommendations)
    - 9.1 [Data Quality Controls](#91-data-quality-controls)
@@ -59,23 +61,18 @@ The bias analysis reveals a four-fifths rule violation in loan approvals by gend
 
 The privacy and governance audit identifies critical gaps in data protection, decision transparency, and regulatory readiness. Direct identifiers (full name, email, SSN, IP address) remain in the analytical dataset at 98-100% coverage with no pseudonymisation applied at ingestion, meaning any unauthorized access would expose identifiable applicant records. Of 208 rejected applications, 169 (81.2%) cite only algorithm_risk_score as the rejection reason, which provides no actionable basis for an applicant to understand or contest the decision. This undermines the Art. 22 safeguards required for automated decisions with legal effects. The system qualifies as high-risk under EU AI Act Annex III, point 5(b), but six of seven mandatory governance obligations under Art. 9-15 are not evidenced in repository artifacts. No lawful basis documentation, consent tracking, retention enforcement, or human oversight workflow exists at the dataset or repository level. Even after removing direct identifiers, the dataset remains highly re-identifiable through financial attribute combinations alone (k = 1 for multiple quasi-identifier sets). Overall privacy and governance risk is assessed as Critical.
 
-Taken together, these findings indicate that NovaCred is operating a discriminatory, poorly documented, and insufficiently governed credit decisioning system that processes identifiable personal data without adequate technical or organisational safeguards. The 30 recommendations in Section 9 are organized across data quality controls, bias mitigation measures, privacy safeguards, and a cross-cutting governance framework. The highest priority actions are to suspend automated approvals pending a root-cause model audit, enforce privacy by default at the dataset layer, replace opaque rejection reasons with a controlled taxonomy, and initiate a Data Protection Impact Assessment under GDPR Art. 35 before any further deployment.
+Taken together, these findings indicate that NovaCred is operating a discriminatory, poorly documented, and insufficiently governed credit decisioning system that processes identifiable personal data without adequate technical or organisational safeguards. The recommendations in Section 9 are organized across data quality controls, bias mitigation measures, privacy safeguards, and a cross-cutting governance framework. The highest priority actions are to suspend automated approvals pending a root-cause model audit, enforce privacy by default at the dataset layer, replace opaque rejection reasons with a controlled taxonomy, and initiate a Data Protection Impact Assessment under GDPR Art. 35 before any further deployment.
 
 ---
 
 ## 2. Team and Roles
 
-**Team Lead — Michael Kania**  
-Email: 72782@novasbe.pt
-
-**Data Engineer - Dominik Hohlenstein**  
-Email: 70135@novasbe.pt
-
-**Data Scientist — Niklas Klaus Jürgen Düttmann**  
-Email: 71916@novasbe.pt
-
-**Governance Officer — Mohamed Aannaque**  
-Email: 71359@novasbe.pt
+| Role | Name | Email | Student Nr. |
+|-----|-----|-----|-----|
+| Team Lead | Michael Maximilian Siegfried Kania | 72782@novasbe.pt | 72782 |
+| Data Engineer | Dominik Hohlenstein | 70135@novasbe.pt | 70135 |
+| Data Scientist | Niklas Klaus Jürgen Düttmann | 71916@novasbe.pt | 71916 |
+| Governance Officer | Mohamed Aannaque | 71359@novasbe.pt | 71359 |
 
 ## 3. Project Overview
 
@@ -309,7 +306,7 @@ All interest rates fall within the plausible range of 0–25%. No pricing anomal
 
 **Overall accuracy risk: Moderate–High.** Demographic and pricing variables are stable, but loan approvals without documented income in the canonical field and a spending-income contradiction represent material plausibility breaches in the decision logic.
 
-### 6.6 Summary of Issues and Impact
+### 6.6 Consolidated Quality Risk Summary
 
 The assessment identified 16 distinct data quality issues across all four dimensions. The consolidated risk profile is as follows:
 
@@ -418,7 +415,7 @@ Single-attribute analysis understates the severity of compounded disadvantage. C
 
 Female applicants aged 26–35 face the most severe disadvantage in the entire audit (DI = 0.620). The overall gender DI of 0.77 masks three subgroup violations invisible at the aggregate level. EU AI Act Annex III requires subgroup-level fairness reporting for high-risk credit scoring systems.
 
-### 7.5 Consolidated Fairness Summary
+### 7.5 Consolidated Fairness Risk Summary
 
 | Finding | Metric | Value | Threshold | Status |
 |---|---|---|---|---|
@@ -499,7 +496,7 @@ NovaCred's credit scoring system is classified as high-risk under EU AI Act Anne
 
 Assessment of seven high-risk obligations against repository evidence found one partially met and six not evidenced. Art. 10 (data governance) is partially met because bias was detected upstream and protected/proxy attributes were removed, but monitoring, governance procedures, and documentation are absent. Art. 9 (risk management), Art. 11 (technical documentation), Art. 12 (record-keeping), Art. 13 (transparency), Art. 14 (human oversight), and Art. 15 (accuracy and robustness) are not evidenced in repository artifacts. The record-keeping gap is reinforced by the 87.6% missing `processing_timestamp`, which prevents reliable post-hoc auditing.
 
-### 8.7 Consolidated Risk Summary
+### 8.7 Consolidated Privacy Risk Summary
 
 The table below consolidates all privacy and governance findings. Evidence is stated as metrics only; detailed regulatory analysis is in the referenced notebook sections.
 
@@ -532,7 +529,7 @@ This section consolidates forward-looking recommendations across all three audit
 
 NovaCred's credit decisioning system cannot be deployed in its current state. The bias audit confirmed discriminatory decisioning by gender that persists after all financial controls (OR = 1.98, p = 0.0004), which must be remediated before any further automated credit decisions are made. A Data Protection Impact Assessment under GDPR Art. 35 is required and must be completed before processing resumes. Six of seven EU AI Act high-risk obligations under Art. 9-15 are not evidenced, including risk management, audit logging, transparency, and human oversight, all of which are legal preconditions for deployment under the conformity assessment framework. Direct identifiers remain unprotected in the analytical dataset, and 81.2% of rejection reasons are opaque, undermining both data subject rights and regulatory defensibility.
 
-The subsections below provide 30 concrete recommendations organized across data quality controls (9.1), bias mitigation measures (9.2), privacy safeguards (9.3), and a cross-cutting governance framework (9.4).
+The subsections below provide concrete recommendations organized across data quality controls (9.1), bias mitigation measures (9.2), privacy safeguards (9.3), and a cross-cutting governance framework (9.4).
 
 ### 9.1 Data Quality Controls
 
@@ -610,13 +607,13 @@ This audit assessed NovaCred's automated credit decisioning pipeline across data
 
 The three most consequential findings are interconnected. The gender bias finding (OR = 1.98, p = 0.0004) means NovaCred is making systematically unfair credit decisions. The rejection transparency finding (81.2% opaque reasons) means affected applicants cannot meaningfully contest those decisions. The absence of audit logging (87.6% missing timestamps) means neither NovaCred nor a regulator can investigate when or how these decisions were made. Together, these create a governance failure that is greater than the sum of its parts: a system that discriminates, cannot explain itself, and cannot be audited.
 
-All identified data quality issues were remediated programmatically across the three-notebook pipeline. Protected attributes and proxy variables were removed to prevent direct discriminatory feature access, and direct identifiers and sensitive behavioural fields were removed to reduce re-identification exposure. These dataset-level remediations address the immediate analytical risks but do not resolve the underlying governance deficits. The 30 recommendations in Section 9 provide a structured path from the current state to a compliant operating posture, organized by urgency and mapped to specific regulatory obligations. Remediation feasibility is high. The critical-priority actions (suspension of automated approvals, privacy by default, rejection reason taxonomy, and DPIA initiation) are technically implementable and should be completed before any further model deployment.
+All identified data quality issues were remediated programmatically across the three-notebook pipeline. Protected attributes and proxy variables were removed to prevent direct discriminatory feature access, and direct identifiers and sensitive behavioural fields were removed to reduce re-identification exposure. These dataset-level remediations address the immediate analytical risks but do not resolve the underlying governance deficits. The recommendations in Section 9 provide a structured path from the current state to a compliant operating posture, organized by urgency and mapped to specific regulatory obligations. Remediation feasibility is high. The critical-priority actions (suspension of automated approvals, privacy by default, rejection reason taxonomy, and DPIA initiation) are technically implementable and should be completed before any further model deployment.
 
 ## 11. Contributions
 
 | Team Member | Role | Key Contributions | Primary Sections Owned |
 |------------|------|-------------------|----------------------|
-| Michael Kania | Product Lead | README audit report, presentation, Q&A preparation, cross-notebook review and refinement, coordination | README, Presentation, Notebook 03 |
+| Michael Kania | Product Lead | README audit report, presentation, Q&A preparation, cross-notebook review and refinement, coordination | README, Presentation, Github Repo |
 | Dominik Hohlenstein | Data Engineer | Data loading pipeline, data quality analysis, cleaning and remediation, repository structure | Notebook 01, `src/data_loading.py` |
 | Niklas Klaus Juergen Duettmann | Data Scientist | Bias detection, fairness metrics, statistical testing, proxy and intersectional analysis | Notebook 02 |
 | Mohamed Aannaque | Governance Officer | Privacy assessment, GDPR article mapping, EU AI Act classification | Notebook 03 |
