@@ -10,10 +10,10 @@ This document outlines the task breakdown, ownership, timeline, and deliverable 
 |-------|--------|--------|
 | Setup — Repo, environment, structure, docs | Complete | Done |
 | Data Loading — Canonical loader and flattening | This week | Done |
-| Analysis — Data quality, bias, privacy notebooks | This week | Ongoing (70%) |
-| README — Fill in all analysis sections | This week | Ongoing (60%) |
-| Presentation — Record 6-min video | Before deadline | Not started |
-| Final Review — Code runs, README polished, repo clean | Before deadline | Not started |
+| Analysis — Data quality, bias, privacy notebooks | This week | Done |
+| README — Fill in all analysis sections | This week | Done |
+| Presentation — Record 6-min video | Before deadline | Done |
+| Final Review — Code runs, README polished, repo clean | Before deadline | Done |
 
 ---
 
@@ -86,7 +86,7 @@ This document outlines the task breakdown, ownership, timeline, and deliverable 
 - [x] All team members have commits under their own accounts
 - [x] Commit messages are clear and descriptive
 - [x] Commit history shows steady progress (not a single bulk upload)
-- [ ] All code runs without errors
+- [x] All code runs without errors
 
 ### Notebooks
 
@@ -102,19 +102,19 @@ This document outlines the task breakdown, ownership, timeline, and deliverable 
 - [x] Privacy and Governance sections filled with findings
 - [x] Recommendations are concrete and actionable
 - [x] Conclusion synthesizes findings across all three areas
-- [ ] Contributions table completed with specific contributions per member
+- [x] Contributions table completed with specific contributions per member
 
 ### Presentation
 
-- [ ] Video is under 6 minutes
-- [ ] All team members appear and speak
-- [ ] Key visualizations from analysis are shown
-- [ ] Specific numbers and metrics are cited
-- [ ] Structure: Intro (30s) → Data Quality (90s) → Bias (90s) → Governance (90s) → Conclusion (30s)
+- [x] Video is under 6 minutes
+- [x] All team members appear and speak
+- [x] Key visualizations from analysis are shown
+- [x] Specific numbers and metrics are cited
+- [x] Structure: Intro (30s) → Data Quality (90s) → Bias (90s) → Governance (90s) → Conclusion (30s)
 
 ### Submission
 
-- [ ] Repository URL submitted on Moodle before 23:59 the day before Session 6
-- [ ] Video uploaded (YouTube unlisted, or Google Drive link in README, or in `presentation/` folder)
-- [ ] Final commit is before the deadline
+- [x] Repository URL submitted on Moodle before 23:59 the day before Session 6
+- [x] Video uploaded (YouTube unlisted, or Google Drive link in README, or in `presentation/` folder)
+- [x] Final commit is before the deadline
 - [ ] Peer evaluation completed within 48 hours after Session 6
